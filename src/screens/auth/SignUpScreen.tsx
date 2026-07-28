@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Heading, PillButton, ScreenContainer, Subtitle } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 import type { AuthStackParamList } from '../../navigation/types';
 
@@ -11,6 +12,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'SignUp'>;
 
 export default function SignUpScreen({ navigation }: Props) {
   const { signIn } = useAuth();
+  const { t } = useI18n();
 
   const handleSignUp = () => {
     // Phase 2: real form + supabase.auth.signUp
@@ -24,12 +26,12 @@ export default function SignUpScreen({ navigation }: Props) {
       <View style={styles.icon}>
         <Ionicons name="person-add-outline" size={56} color={colors.accent} />
       </View>
-      <Heading>Sign Up</Heading>
-      <Subtitle>Placeholder — Supabase Auth arrives in Phase 2.</Subtitle>
+      <Heading>{t('auth.signupTitle')}</Heading>
+      <Subtitle>{t('auth.placeholder')}</Subtitle>
       <View style={{ height: 8 }} />
-      <PillButton label="Create account (mock)" onPress={handleSignUp} />
+      <PillButton label={t('auth.createMock')} onPress={handleSignUp} />
       <PillButton
-        label="Back to login"
+        label={t('auth.backToLogin')}
         variant="outline"
         onPress={() => navigation.goBack()}
       />

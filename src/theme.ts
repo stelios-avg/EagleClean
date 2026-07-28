@@ -16,6 +16,18 @@ export const colors = {
   tabInactive: '#8A8F9E',
 };
 
+/**
+ * Manrope (loaded in App.tsx). Custom fonts need one family name per weight,
+ * so use fontFamily from here instead of fontWeight in styles.
+ */
+export const fonts = {
+  regular: 'Manrope_400Regular',
+  medium: 'Manrope_500Medium',
+  semiBold: 'Manrope_600SemiBold',
+  bold: 'Manrope_700Bold',
+  extraBold: 'Manrope_800ExtraBold',
+};
+
 export const radii = {
   card: 28,
   row: 18,

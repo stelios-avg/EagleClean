@@ -1,28 +1,29 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CalendarScreen from '../screens/booking/CalendarScreen';
-import TimeSlotsScreen from '../screens/booking/TimeSlotsScreen';
 import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 import BookingSummaryScreen from '../screens/booking/BookingSummaryScreen';
+import ContactDetailsScreen from '../screens/booking/ContactDetailsScreen';
 import PaymentScreen from '../screens/booking/PaymentScreen';
-import { colors } from '../theme';
+import { useI18n } from '../i18n/LanguageContext';
+import { colors, fonts } from '../theme';
 import type { BookingStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<BookingStackParamList>();
 
 /**
  * Sequential booking flow: Calendar -> Time Slots -> Service Selection
- * -> Summary -> Payment. Selections accumulate in route params; the back
- * button naturally un-does one step at a time. Auth-agnostic until the
- * final confirm step.
+ * -> Summary -> Contact Details (mandatory) -> Payment. Selections
+ * accumulate in route params. Auth is enforced at the Summary step.
  */
 export default function BookingNavigator() {
+  const { t } = useI18n();
   return (
     <Stack.Navigator
       screenOptions={{
         headerStyle: { backgroundColor: colors.ink },
         headerTintColor: colors.textOnDark,
-        headerTitleStyle: { fontWeight: '700' },
+        headerTitleStyle: { fontFamily: fonts.bold },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: colors.background },
@@ -31,27 +32,27 @@ export default function BookingNavigator() {
       <Stack.Screen
         name="Calendar"
         component={CalendarScreen}
-        options={{ title: 'Select a Day' }}
-      />
-      <Stack.Screen
-        name="TimeSlots"
-        component={TimeSlotsScreen}
-        options={{ title: 'Select a Time' }}
+        options={{ title: t('nav.selectDay') }}
       />
       <Stack.Screen
         name="ServiceSelection"
         component={ServiceSelectionScreen}
-        options={{ title: 'Select a Service' }}
+        options={{ title: t('nav.selectService') }}
       />
       <Stack.Screen
         name="BookingSummary"
         component={BookingSummaryScreen}
-        options={{ title: 'Summary' }}
+        options={{ title: t('nav.summary') }}
+      />
+      <Stack.Screen
+        name="ContactDetails"
+        component={ContactDetailsScreen}
+        options={{ title: t('nav.contact') }}
       />
       <Stack.Screen
         name="Payment"
         component={PaymentScreen}
-        options={{ title: 'Payment' }}
+        options={{ title: t('nav.payment') }}
       />
     </Stack.Navigator>
   );

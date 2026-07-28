@@ -1,20 +1,28 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Heading, ImageCard, Subtitle } from '../../components/ui';
+import { useI18n } from '../../i18n/LanguageContext';
 import { colors, spacing } from '../../theme';
 
 export default function MarketplaceScreen() {
+  const { t } = useI18n();
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Heading>Marketplace</Heading>
-      <Subtitle>
-        Premium cleaning products, delivered to your door. The full shop opens
-        in a later phase.
-      </Subtitle>
+      <Heading>{t('marketplace.title')}</Heading>
+      <Subtitle>{t('marketplace.subtitle')}</Subtitle>
       <ImageCard
         image={require('../../../assets/images/marketplace-products.png')}
-        title="Eco-friendly essentials"
-        linkLabel="Coming soon"
+        title={t('marketplace.products')}
+        linkLabel={t('marketplace.soon')}
+        height={300}
+        onPress={() => {}}
+      />
+      <ImageCard
+        image={require('../../../assets/images/marketplace-equipment.png')}
+        title={t('marketplace.equipment')}
+        linkLabel={t('marketplace.soon')}
+        height={300}
+        imageAlign="bottom"
         onPress={() => {}}
       />
     </ScrollView>

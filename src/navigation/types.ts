@@ -16,14 +16,22 @@ export type BookingSelection = {
   option: HomeSize | CrewService;
 };
 
+/** Mandatory customer details collected before payment. */
+export type ContactDetails = {
+  email: string;
+  phone: string;
+  address: string;
+};
+
 // ---------- Param lists (one per navigator) ----------
 
 export type BookingStackParamList = {
-  Calendar: undefined;
-  TimeSlots: { date: string };
+  /** `preselected` skips the ServiceSelection step (set when a category is tapped on Home). */
+  Calendar: { preselected?: HomeSize | CrewService } | undefined;
   ServiceSelection: { date: string; timeSlot: string };
   BookingSummary: BookingSelection;
-  Payment: BookingSelection;
+  ContactDetails: BookingSelection;
+  Payment: BookingSelection & { contact: ContactDetails };
 };
 
 export type AuthStackParamList = {

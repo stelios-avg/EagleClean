@@ -1,23 +1,30 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BrandTitle, PillButton } from '../components/ui';
+import { BrandLogo, LanguageToggle, PillButton } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../i18n/LanguageContext';
 import type { RootStackParamList } from '../navigation/types';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
 
 export default function WelcomeScreen({ navigation }: Props) {
   const { isAuthenticated } = useAuth();
+  const { t } = useI18n();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigation.replace('MainTabs');
-    }
-  }, [isAuthenticated, navigation]);
+  // Forward authenticated users to the tabs, but only while this screen is
+  // focused — logging in mid-booking must not yank the user out of the flow.
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        navigation.replace('MainTabs');
+      }
+    }, [isAuthenticated, navigation])
+  );
 
   return (
     <View style={styles.root}>
@@ -26,8 +33,9 @@ export default function WelcomeScreen({ navigation }: Props) {
         style={styles.hero}
         resizeMode="cover"
       >
+        {/* Lighter veil up top so the navy logo artwork stays readable without its chip. */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.55)', 'transparent']}
+          colors={['rgba(255,255,255,0.72)', 'rgba(255,255,255,0.25)', 'transparent']}
           style={styles.topGradient}
         />
         <LinearGradient
@@ -37,22 +45,23 @@ export default function WelcomeScreen({ navigation }: Props) {
 
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.brandBar}>
-            <BrandTitle size={22} />
+            <BrandLogo height={112} chip={false} />
+            <View style={styles.langCorner}>
+              <LanguageToggle />
+            </View>
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.welcomeTitle}>Welcome!</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Enjoy a spotless home, easily booked with a few simple taps.
-            </Text>
+            <Text style={styles.welcomeTitle}>{t('welcome.title')}</Text>
+            <Text style={styles.welcomeSubtitle}>{t('welcome.subtitle')}</Text>
             <View style={styles.buttons}>
               <PillButton
-                label="Book Now"
+                label={t('welcome.bookNow')}
                 variant="light"
                 onPress={() => navigation.navigate('BookingFlow')}
               />
               <PillButton
-                label="Login / Sign Up"
+                label={t('welcome.loginSignup')}
                 variant="ghost"
                 onPress={() => navigation.navigate('Auth')}
               />
@@ -77,7 +86,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 140,
+    height: 220,
   },
   bottomGradient: {
     position: 'absolute',
@@ -94,6 +103,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 14,
   },
+  langCorner: {
+    position: 'absolute',
+    right: 14,
+    top: 14,
+  },
   content: {
     padding: 26,
     gap: 12,
@@ -101,12 +115,13 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     color: colors.textOnDark,
     fontSize: 46,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     letterSpacing: -1,
   },
   welcomeSubtitle: {
     color: colors.textOnDarkMuted,
     fontSize: 17,
+    fontFamily: fonts.medium,
     lineHeight: 25,
     marginBottom: 14,
   },

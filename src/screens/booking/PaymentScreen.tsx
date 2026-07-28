@@ -15,14 +15,16 @@ import {
   SERVICE_PRICES,
   formatEuros,
 } from '../../constants/payments';
-import { colors, radii, spacing } from '../../theme';
+import { useI18n } from '../../i18n/LanguageContext';
+import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Payment'>;
 
 /**
  * Phase 2: replace with a Supabase Edge Function that creates a Stripe
- * PaymentIntent server-side and returns its client_secret.
+ * PaymentIntent server-side (with the booking + contact details in
+ * metadata) and returns its client_secret.
  */
 async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> {
   throw new Error(
@@ -31,7 +33,8 @@ async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> 
 }
 
 export default function PaymentScreen({ navigation, route }: Props) {
-  const { date, timeSlot, option } = route.params;
+  const { t } = useI18n();
+  const { date, timeSlot, option, contact } = route.params;
   const amount = SERVICE_PRICES[option];
 
   const [platformPayAvailable, setPlatformPayAvailable] = useState(false);
@@ -57,7 +60,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
         applePay: {
           cartItems: [
             {
-              label: `${option} — ${date} ${timeSlot}`,
+              label: `${t(`service.${option}`)} — ${date} ${timeSlot}`,
               amount: (amount / 100).toFixed(2),
               paymentType: PlatformPay.PaymentType.Immediate,
             },
@@ -74,12 +77,12 @@ export default function PaymentScreen({ navigation, route }: Props) {
       });
 
       if (error) {
-        Alert.alert('Payment failed', error.message);
+        Alert.alert(t('payment.failedTitle'), error.message);
         return;
       }
 
-      // Phase 2: mark the booking as paid in Supabase before navigating.
-      Alert.alert('Payment successful', 'Your cleaning is booked!', [
+      // Phase 2: save the paid booking (incl. contact details) in Supabase.
+      Alert.alert(t('payment.successTitle'), t('payment.successBody'), [
         {
           text: 'OK',
           onPress: () =>
@@ -87,7 +90,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
         },
       ]);
     } catch (e) {
-      Alert.alert('Payment unavailable', (e as Error).message);
+      Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
     } finally {
       setProcessing(false);
     }
@@ -96,16 +99,20 @@ export default function PaymentScreen({ navigation, route }: Props) {
   return (
     <View style={styles.root}>
       <View>
-        <Heading>Payment</Heading>
-        <Subtitle>Pay securely with your device wallet.</Subtitle>
+        <Heading>{t('payment.title')}</Heading>
+        <Subtitle>{t('payment.subtitle')}</Subtitle>
       </View>
 
       <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>Total to pay</Text>
+        <Text style={styles.totalLabel}>{t('payment.total')}</Text>
         <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
         <Text style={styles.totalMeta}>
-          {option} · {date} · {timeSlot}
+          {t(`service.${option}`)} · {date} · {timeSlot}
         </Text>
+        <Text style={styles.totalMeta}>
+          {contact.email} · {contact.phone}
+        </Text>
+        <Text style={styles.totalMeta}>{contact.address}</Text>
       </View>
 
       <View style={styles.footer}>
@@ -119,11 +126,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
             style={styles.payButton}
           />
         ) : (
-          <Subtitle>
-            Apple Pay / Google Pay is not available on this device. Wallet
-            payments require a development build (not Expo Go); a card payment
-            fallback arrives in Phase 3.
-          </Subtitle>
+          <Subtitle>{t('payment.walletUnavailable')}</Subtitle>
         )}
       </View>
     </View>
@@ -146,17 +149,18 @@ const styles = StyleSheet.create({
   totalLabel: {
     color: colors.textOnDarkMuted,
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
   },
   totalValue: {
     color: colors.textOnDark,
     fontSize: 42,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     letterSpacing: -1,
   },
   totalMeta: {
     color: colors.textOnDarkMuted,
     fontSize: 14,
+    fontFamily: fonts.regular,
   },
   footer: {
     paddingBottom: 10,

@@ -13,8 +13,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * (rather than conditionally rendered on auth state) because this app allows
  * guests to do almost everything:
  *
- *  - Welcome:     the initial "Book Now vs Login" fork
- *  - MainTabs:    Home / Marketplace / Customer Account
+ *  - MainTabs:    the main menu (Home / Marketplace / Customer Account),
+ *                 shown immediately on launch for guests and users alike
+ *  - Welcome:     kept as a secondary marketing screen
  *  - BookingFlow: the sequential booking stack, reachable as guest OR user
  *  - Auth:        login/sign-up, presented as a modal over anything
  *
@@ -24,7 +25,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export default function RootNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="MainTabs" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       <Stack.Screen name="BookingFlow" component={BookingNavigator} />

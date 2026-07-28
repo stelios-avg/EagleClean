@@ -4,22 +4,42 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
   type ImageSourcePropType,
+  type KeyboardTypeOptions,
   type ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing } from '../theme';
+import { useI18n } from '../i18n/LanguageContext';
+import type { Language } from '../i18n/translations';
+import { colors, fonts, radii, spacing } from '../theme';
 
-/** Wordmark used in the dark navigation headers. */
-export function BrandTitle({ size = 20 }: { size?: number }) {
-  return (
-    <View style={styles.brandRow}>
-      <Ionicons name="sparkles" size={size - 2} color={colors.textOnDark} />
-      <Text style={[styles.brandText, { fontSize: size }]}>EagleClean</Text>
-    </View>
+const LOGO_ASPECT = 1014 / 720;
+
+/**
+ * Company logo (Eagle Watch Cleaning Services). The artwork is navy/gold on
+ * transparent, so on dark surfaces it sits inside a white rounded chip.
+ */
+export function BrandLogo({
+  height = 38,
+  chip = true,
+}: {
+  height?: number;
+  chip?: boolean;
+}) {
+  const logo = (
+    <Image
+      source={require('../../assets/images/logo.png')}
+      style={{ height, width: height * LOGO_ASPECT }}
+      resizeMode="contain"
+    />
   );
+  if (!chip) {
+    return logo;
+  }
+  return <View style={styles.brandChip}>{logo}</View>;
 }
 
 export function ScreenContainer({
@@ -103,19 +123,27 @@ export function ImageCard({
   linkLabel,
   onPress,
   height = 360,
+  imageAlign = 'center',
 }: {
   image: ImageSourcePropType;
   title: string;
   linkLabel: string;
   onPress: () => void;
   height?: number;
+  /** 'bottom' shows the lower part of tall portrait photos instead of the center. */
+  imageAlign?: 'center' | 'bottom';
 }) {
+  // Oversize the image and pull it up so the visible crop is the lower part.
+  const imageStyle =
+    imageAlign === 'bottom'
+      ? [StyleSheet.absoluteFill, { height: '170%' as const, top: '-70%' as const }]
+      : StyleSheet.absoluteFill;
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.imageCard, { height }, pressed && { opacity: 0.92 }]}
     >
-      <Image source={image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      <Image source={image} style={imageStyle} resizeMode="cover" />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.72)']}
         style={styles.imageCardGradient}
@@ -162,6 +190,69 @@ export function ListRow({
   );
 }
 
+/** Labelled text input with inline validation error, used in forms. */
+export function FormInput({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  error,
+  keyboardType = 'default',
+}: {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  error?: string;
+  keyboardType?: KeyboardTypeOptions;
+}) {
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textSecondary}
+        keyboardType={keyboardType}
+        autoCapitalize="none"
+        style={[styles.input, !!error && { borderColor: '#E5484D' }]}
+      />
+      {error ? <Text style={styles.inputError}>{error}</Text> : null}
+    </View>
+  );
+}
+
+/** EL / EN language switch. `onDark` renders it for dark surfaces. */
+export function LanguageToggle({ onDark = false }: { onDark?: boolean }) {
+  const { language, setLanguage } = useI18n();
+  const options: Language[] = ['el', 'en'];
+  return (
+    <View style={[styles.langRow, onDark && styles.langRowDark]}>
+      {options.map((lang) => {
+        const active = language === lang;
+        return (
+          <Pressable
+            key={lang}
+            onPress={() => setLanguage(lang)}
+            style={[styles.langChip, active && styles.langChipActive]}
+          >
+            <Text
+              style={[
+                styles.langLabel,
+                onDark && !active && { color: colors.textOnDarkMuted },
+                active && { color: colors.textOnDark },
+              ]}
+            >
+              {lang.toUpperCase()}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 /** Compact centered chip, used for the time slot grid. */
 export function Chip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
@@ -175,15 +266,13 @@ export function Chip({ label, onPress }: { label: string; onPress: () => void })
 }
 
 const styles = StyleSheet.create({
-  brandRow: {
-    flexDirection: 'row',
+  brandChip: {
+    backgroundColor: colors.background,
+    borderRadius: 14,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    gap: 7,
-  },
-  brandText: {
-    color: colors.textOnDark,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    justifyContent: 'center',
   },
   container: {
     flex: 1,
@@ -193,12 +282,13 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 32,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 15,
+    fontFamily: fonts.regular,
     lineHeight: 21,
     color: colors.textSecondary,
   },
@@ -223,7 +313,7 @@ const styles = StyleSheet.create({
   },
   pillLabel: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   imageCard: {
     borderRadius: radii.card,
@@ -247,7 +337,7 @@ const styles = StyleSheet.create({
   imageCardTitle: {
     color: colors.textOnDark,
     fontSize: 27,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     lineHeight: 32,
   },
   imageCardLinkRow: {
@@ -258,7 +348,7 @@ const styles = StyleSheet.create({
   imageCardLink: {
     color: colors.textOnDark,
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.semiBold,
     textDecorationLine: 'underline',
   },
   listRow: {
@@ -282,13 +372,62 @@ const styles = StyleSheet.create({
   },
   listRowLabel: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
   listRowSublabel: {
     fontSize: 13,
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radii.row,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    color: colors.textPrimary,
+    backgroundColor: colors.background,
+  },
+  inputError: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    color: '#E5484D',
+  },
+  langRow: {
+    flexDirection: 'row',
+    gap: 4,
+    padding: 3,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    alignSelf: 'flex-start',
+  },
+  langRowDark: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  langChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: radii.pill,
+  },
+  langChipActive: {
+    backgroundColor: colors.accent,
+  },
+  langLabel: {
+    fontSize: 13,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
   },
   chip: {
     flex: 1,
@@ -301,7 +440,7 @@ const styles = StyleSheet.create({
   },
   chipLabel: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
 });

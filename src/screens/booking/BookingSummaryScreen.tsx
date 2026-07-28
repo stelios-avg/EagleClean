@@ -4,8 +4,9 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-n
 import { Ionicons } from '@expo/vector-icons';
 import { Heading, PillButton, Subtitle } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../i18n/LanguageContext';
 import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
-import { colors, radii, spacing } from '../../theme';
+import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingSummary'>;
@@ -33,14 +34,16 @@ function SummaryRow({
 /**
  * End of the guest booking flow — this is where the Guest -> Authenticated
  * handoff happens. Guests get "Log in to confirm", which opens the Auth
- * modal on top; the selection here stays intact underneath.
+ * modal on top; the selection here stays intact underneath. Authenticated
+ * users continue to the mandatory Contact Details step, then Payment.
  */
 export default function BookingSummaryScreen({ navigation, route }: Props) {
   const { isAuthenticated } = useAuth();
+  const { t, locale } = useI18n();
   const { date, timeSlot, category, option } = route.params;
   const amount = SERVICE_PRICES[option];
 
-  const prettyDate = new Date(date).toLocaleDateString(undefined, {
+  const prettyDate = new Date(date).toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -52,21 +55,25 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
   return (
     <View style={styles.root}>
       <View>
-        <Heading>Booking summary</Heading>
-        <Subtitle>Review your cleaning before payment.</Subtitle>
+        <Heading>{t('summary.title')}</Heading>
+        <Subtitle>{t('summary.subtitle')}</Subtitle>
 
         <View style={styles.card}>
           <SummaryRow
             icon="briefcase-outline"
-            label="Service"
-            value={category === 'my-home' ? 'My Home' : 'Cleaning Crew'}
+            label={t('summary.service')}
+            value={category === 'my-home' ? t('services.myHome') : t('services.crew')}
           />
-          <SummaryRow icon="options-outline" label="Option" value={option} />
-          <SummaryRow icon="calendar-outline" label="Day" value={prettyDate} />
-          <SummaryRow icon="time-outline" label="Time" value={timeSlot} />
+          <SummaryRow
+            icon="options-outline"
+            label={t('summary.option')}
+            value={t(`service.${option}`)}
+          />
+          <SummaryRow icon="calendar-outline" label={t('summary.day')} value={prettyDate} />
+          <SummaryRow icon="time-outline" label={t('summary.time')} value={timeSlot} />
           <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalLabel}>{t('summary.total')}</Text>
             <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
           </View>
         </View>
@@ -75,14 +82,14 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
       <View style={styles.footer}>
         {isAuthenticated ? (
           <PillButton
-            label="Continue to payment"
-            onPress={() => navigation.navigate('Payment', route.params)}
+            label={t('summary.continue')}
+            onPress={() => navigation.navigate('ContactDetails', route.params)}
           />
         ) : (
           <>
-            <Subtitle>Log in or create an account to confirm your booking.</Subtitle>
+            <Subtitle>{t('summary.loginPrompt')}</Subtitle>
             <PillButton
-              label="Log in to confirm"
+              label={t('summary.loginToConfirm')}
               onPress={() => rootNavigation?.navigate('Auth')}
             />
           </>
@@ -123,12 +130,15 @@ const styles = StyleSheet.create({
   rowLabel: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
   rowValue: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
+    maxWidth: '60%',
+    textAlign: 'right',
   },
   divider: {
     height: 1,
@@ -141,12 +151,12 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
   totalValue: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
   },
   footer: {

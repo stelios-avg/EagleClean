@@ -1,9 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Heading, ListRow, Subtitle } from '../../components/ui';
 import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
-import { colors, spacing } from '../../theme';
+import { useI18n } from '../../i18n/LanguageContext';
+import { colors, fonts, spacing } from '../../theme';
 import type {
   BookingStackParamList,
   CrewService,
@@ -25,6 +26,7 @@ const CREW_SERVICES: { service: CrewService; icon: 'sparkles-outline' | 'people-
 ];
 
 export default function ServiceSelectionScreen({ navigation, route }: Props) {
+  const { t } = useI18n();
   const { date, timeSlot } = route.params;
 
   const selectHome = (option: HomeSize) =>
@@ -35,26 +37,26 @@ export default function ServiceSelectionScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Heading>Choose a service</Heading>
-      <Subtitle>Step 3 of 3 — what should we clean?</Subtitle>
+      <Heading>{t('services.title')}</Heading>
+      <Subtitle>{t('services.step')}</Subtitle>
 
-      <Text style={styles.sectionTitle}>My Home</Text>
+      <Text style={styles.sectionTitle}>{t('services.myHome')}</Text>
       {HOME_SIZES.map(({ size, icon }) => (
         <ListRow
           key={size}
           icon={icon}
-          label={size}
+          label={t(`service.${size}`)}
           sublabel={formatEuros(SERVICE_PRICES[size])}
           onPress={() => selectHome(size)}
         />
       ))}
 
-      <Text style={styles.sectionTitle}>Cleaning Crew</Text>
+      <Text style={styles.sectionTitle}>{t('services.crew')}</Text>
       {CREW_SERVICES.map(({ service, icon }) => (
         <ListRow
           key={service}
           icon={icon}
-          label={service}
+          label={t(`service.${service}`)}
           sublabel={formatEuros(SERVICE_PRICES[service])}
           onPress={() => selectCrew(service)}
         />
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
     marginTop: 14,
     marginBottom: 2,
