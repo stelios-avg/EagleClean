@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   Image,
   ImageBackground,
   Pressable,
@@ -15,9 +16,11 @@ import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { BrandLogo, ImageCard, LanguageToggle } from '../../components/ui';
+import { BrandLogo, ImageCard, LanguageToggle, PillButton } from '../../components/ui';
 import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
+import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
+import type { TranslationKey } from '../../i18n/translations';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type {
   CrewService,
@@ -48,6 +51,44 @@ const FEATURED: { option: ServiceOption; image: ImageSourcePropType }[] = [
   { option: '2 Bedroom', image: require('../../../assets/images/hero-welcome.png') },
 ];
 
+/** Monthly membership plans, shown to signed-in customers. Stripe checkout arrives in Phase 3. */
+const PLANS: {
+  id: 'silver' | 'gold' | 'platinum';
+  name: string;
+  pricePerMonth: number;
+  tint: string;
+  featureKeys: TranslationKey[];
+  popular?: boolean;
+}[] = [
+  {
+    id: 'silver',
+    name: 'Silver',
+    pricePerMonth: 149,
+    tint: '#9BA3B5',
+    featureKeys: ['plans.silver.f1', 'plans.silver.f2', 'plans.silver.f3'],
+  },
+  {
+    id: 'gold',
+    name: 'Gold',
+    pricePerMonth: 279,
+    tint: '#D4A017',
+    featureKeys: ['plans.gold.f1', 'plans.gold.f2', 'plans.gold.f3'],
+    popular: true,
+  },
+  {
+    id: 'platinum',
+    name: 'Platinum',
+    pricePerMonth: 499,
+    tint: '#2946F5',
+    featureKeys: [
+      'plans.platinum.f1',
+      'plans.platinum.f2',
+      'plans.platinum.f3',
+      'plans.platinum.f4',
+    ],
+  },
+];
+
 function SectionHeader({
   title,
   actionLabel,
@@ -70,8 +111,13 @@ function SectionHeader({
 export default function HomeScreen({ navigation }: Props) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated } = useAuth();
 
   const startBooking = () => navigation.navigate('BookingFlow');
+
+  const selectPlan = (name: string) =>
+    // Phase 3: Stripe subscription checkout for the selected plan.
+    Alert.alert(name, t('account.membershipSoon'));
 
   const bookService = (option: ServiceOption) =>
     navigation.navigate('BookingFlow', {
@@ -184,6 +230,47 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Marketplace')}
         />
       </View>
+
+      {/* Membership plans — only for signed-in customers */}
+      {isAuthenticated && (
+        <View style={styles.plansSection}>
+          <Text style={styles.sectionTitle}>{t('plans.title')}</Text>
+          <Text style={styles.plansSubtitle}>{t('plans.subtitle')}</Text>
+          {PLANS.map((plan) => (
+            <View
+              key={plan.id}
+              style={[styles.planCard, plan.popular && styles.planCardPopular]}
+            >
+              {plan.popular && (
+                <View style={styles.popularBadge}>
+                  <Text style={styles.popularBadgeText}>{t('plans.popular')}</Text>
+                </View>
+              )}
+              <View style={styles.planHeader}>
+                <View style={[styles.planDot, { backgroundColor: plan.tint }]} />
+                <Text style={styles.planName}>{plan.name}</Text>
+                <View style={styles.planPriceWrap}>
+                  <Text style={styles.planPrice}>{plan.pricePerMonth}€</Text>
+                  <Text style={styles.planPer}>{t('plans.perMonth')}</Text>
+                </View>
+              </View>
+              <View style={styles.planFeatures}>
+                {plan.featureKeys.map((key) => (
+                  <View key={key} style={styles.planFeatureRow}>
+                    <Ionicons name="checkmark-circle" size={18} color={plan.tint} />
+                    <Text style={styles.planFeatureText}>{t(key)}</Text>
+                  </View>
+                ))}
+              </View>
+              <PillButton
+                label={t('plans.select')}
+                variant={plan.popular ? 'accent' : 'dark'}
+                onPress={() => selectPlan(plan.name)}
+              />
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -336,5 +423,88 @@ const styles = StyleSheet.create({
   marketSection: {
     paddingHorizontal: spacing.screen,
     marginTop: 22,
+  },
+  plansSection: {
+    paddingHorizontal: spacing.screen,
+    marginTop: 28,
+    gap: 14,
+  },
+  plansSubtitle: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    marginTop: -6,
+    marginBottom: 2,
+  },
+  planCard: {
+    backgroundColor: colors.background,
+    borderRadius: radii.card,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    padding: 22,
+    gap: 16,
+  },
+  planCardPopular: {
+    borderColor: colors.accent,
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: -12,
+    right: 22,
+    backgroundColor: colors.accent,
+    borderRadius: radii.pill,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  popularBadgeText: {
+    color: colors.textOnDark,
+    fontSize: 12,
+    fontFamily: fonts.bold,
+  },
+  planHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  planDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  planName: {
+    flex: 1,
+    fontSize: 20,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+  },
+  planPriceWrap: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  planPrice: {
+    fontSize: 24,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  planPer: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+  },
+  planFeatures: {
+    gap: 10,
+  },
+  planFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  planFeatureText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: colors.textPrimary,
+    lineHeight: 20,
   },
 });

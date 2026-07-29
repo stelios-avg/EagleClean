@@ -32,6 +32,7 @@ export type BookingStackParamList = {
   BookingSummary: BookingSelection;
   ContactDetails: BookingSelection;
   Payment: BookingSelection & { contact: ContactDetails };
+  Confirmation: BookingSelection & { contact: ContactDetails };
 };
 
 export type AuthStackParamList = {

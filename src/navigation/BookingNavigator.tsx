@@ -5,6 +5,7 @@ import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 import BookingSummaryScreen from '../screens/booking/BookingSummaryScreen';
 import ContactDetailsScreen from '../screens/booking/ContactDetailsScreen';
 import PaymentScreen from '../screens/booking/PaymentScreen';
+import ConfirmationScreen from '../screens/booking/ConfirmationScreen';
 import { useI18n } from '../i18n/LanguageContext';
 import { colors, fonts } from '../theme';
 import type { BookingStackParamList } from './types';
@@ -21,12 +22,13 @@ export default function BookingNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.ink },
+        headerStyle: { backgroundColor: colors.accent },
         headerTintColor: colors.textOnDark,
         headerTitleStyle: { fontFamily: fonts.bold },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: colors.background },
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen
@@ -53,6 +55,11 @@ export default function BookingNavigator() {
         name="Payment"
         component={PaymentScreen}
         options={{ title: t('nav.payment') }}
+      />
+      <Stack.Screen
+        name="Confirmation"
+        component={ConfirmationScreen}
+        options={{ headerShown: false, gestureEnabled: false }}
       />
     </Stack.Navigator>
   );

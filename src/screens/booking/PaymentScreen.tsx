@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   PlatformPay,
   PlatformPayButton,
   confirmPlatformPayPayment,
   isPlatformPaySupported,
 } from '@stripe/stripe-react-native';
-import { Heading, Subtitle } from '../../components/ui';
+import { Heading, PillButton, Subtitle } from '../../components/ui';
 import {
   CURRENCY_CODE,
   MERCHANT_COUNTRY_CODE,
@@ -17,7 +17,7 @@ import {
 } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
-import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
+import type { BookingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Payment'>;
 
@@ -48,8 +48,8 @@ export default function PaymentScreen({ navigation, route }: Props) {
     })();
   }, []);
 
-  const rootNavigation =
-    navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+  // Replace so the back gesture can't return to the payment screen.
+  const goToConfirmation = () => navigation.replace('Confirmation', route.params);
 
   const pay = async () => {
     setProcessing(true);
@@ -82,13 +82,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
       }
 
       // Phase 2: save the paid booking (incl. contact details) in Supabase.
-      Alert.alert(t('payment.successTitle'), t('payment.successBody'), [
-        {
-          text: 'OK',
-          onPress: () =>
-            rootNavigation?.reset({ index: 0, routes: [{ name: 'MainTabs' }] }),
-        },
-      ]);
+      goToConfirmation();
     } catch (e) {
       Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
     } finally {
@@ -127,6 +121,13 @@ export default function PaymentScreen({ navigation, route }: Props) {
           />
         ) : (
           <Subtitle>{t('payment.walletUnavailable')}</Subtitle>
+        )}
+        {__DEV__ && (
+          <PillButton
+            label={t('payment.simulate')}
+            variant="outline"
+            onPress={goToConfirmation}
+          />
         )}
       </View>
     </View>

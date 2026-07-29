@@ -18,11 +18,12 @@ export default function AuthNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colors.ink },
+        headerStyle: { backgroundColor: colors.accent },
         headerTintColor: colors.textOnDark,
         headerTitleStyle: { fontFamily: fonts.bold },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.background },
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen

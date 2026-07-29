@@ -15,7 +15,17 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
+import type { TranslationKey } from '../../i18n/translations';
 import type { MainTabParamList, RootStackParamList } from '../../navigation/types';
+
+const MEMBERSHIP_PERKS: TranslationKey[] = [
+  'account.perk1',
+  'account.perk2',
+  'account.perk3',
+  'account.perk4',
+  'account.perk5',
+  'account.perk6',
+];
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'Account'>,
@@ -90,7 +100,14 @@ export default function AccountScreen({ navigation }: Props) {
         <Text style={styles.membershipPrice}>
           €14.99<Text style={styles.membershipPeriod}>{t('account.perMonth')}</Text>
         </Text>
-        <Text style={styles.membershipPerks}>{t('account.perks')}</Text>
+        <View style={styles.perksList}>
+          {MEMBERSHIP_PERKS.map((key) => (
+            <View key={key} style={styles.perkRow}>
+              <Ionicons name="checkmark-circle" size={18} color="#4ADE80" />
+              <Text style={styles.perkText}>{t(key)}</Text>
+            </View>
+          ))}
+        </View>
         <PillButton
           label={t('account.become')}
           variant="light"
@@ -184,12 +201,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     color: colors.textOnDarkMuted,
   },
-  membershipPerks: {
+  perksList: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  perkRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  perkText: {
+    flex: 1,
     color: colors.textOnDarkMuted,
     fontSize: 14,
-    fontFamily: fonts.regular,
-    lineHeight: 20,
-    marginBottom: 8,
+    fontFamily: fonts.medium,
+    lineHeight: 19,
   },
   langRow: {
     flexDirection: 'row',

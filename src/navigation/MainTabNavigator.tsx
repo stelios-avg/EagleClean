@@ -1,4 +1,5 @@
 import React from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo } from '../components/ui';
@@ -21,12 +22,27 @@ const TAB_ICONS: Record<
   Account: { idle: 'person-circle-outline', active: 'person-circle' },
 };
 
+/** Photo behind the logo in the Marketplace header, dimmed for readability. */
+function MarketplaceHeaderBackground() {
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <Image
+        source={require('../../assets/images/marketplace-products.png')}
+        style={styles.headerPhoto}
+        resizeMode="cover"
+      />
+      <View style={styles.headerPhotoDim} />
+    </View>
+  );
+}
+
 export default function MainTabNavigator() {
   const { t } = useI18n();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerStyle: { backgroundColor: colors.ink },
+        animation: 'shift',
+        headerStyle: { backgroundColor: colors.accent },
         headerShadowVisible: false,
         headerTitleAlign: 'center',
         headerTitle: () => <BrandLogo height={34} />,
@@ -57,7 +73,10 @@ export default function MainTabNavigator() {
       <Tab.Screen
         name="Marketplace"
         component={MarketplaceScreen}
-        options={{ title: t('tab.marketplace') }}
+        options={{
+          title: t('tab.marketplace'),
+          headerBackground: MarketplaceHeaderBackground,
+        }}
       />
       <Tab.Screen
         name="Account"
@@ -67,3 +86,18 @@ export default function MainTabNavigator() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerPhoto: {
+    width: '100%',
+    height: '100%',
+  },
+  headerPhotoDim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(11,12,16,0.35)',
+  },
+});
