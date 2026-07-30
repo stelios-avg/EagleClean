@@ -16,6 +16,7 @@ import {
   formatEuros,
 } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
+import { createBooking } from '../../services/bookings';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList } from '../../navigation/types';
 
@@ -34,8 +35,7 @@ async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> 
 
 export default function PaymentScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const { date, timeSlot, option, contact } = route.params;
-  const amount = SERVICE_PRICES[option];
+  const amount = SERVICE_PRICES[route.params.option];
 
   const [platformPayAvailable, setPlatformPayAvailable] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -48,8 +48,15 @@ export default function PaymentScreen({ navigation, route }: Props) {
     })();
   }, []);
 
-  // Replace so the back gesture can't return to the payment screen.
-  const goToConfirmation = () => navigation.replace('Confirmation', route.params);
+  const saveAndConfirm = async (paymentIntentId?: string | null) => {
+    await createBooking({
+      ...route.params,
+      status: 'paid',
+      paymentIntentId: paymentIntentId ?? null,
+    });
+    // Replace so the back gesture can't return to the payment screen.
+    navigation.replace('Confirmation', route.params);
+  };
 
   const pay = async () => {
     setProcessing(true);
@@ -60,7 +67,7 @@ export default function PaymentScreen({ navigation, route }: Props) {
         applePay: {
           cartItems: [
             {
-              label: `${t(`service.${option}`)} — ${date} ${timeSlot}`,
+              label: `${t(`service.${route.params.option}`)} — ${route.params.date} ${route.params.timeSlot}`,
               amount: (amount / 100).toFixed(2),
               paymentType: PlatformPay.PaymentType.Immediate,
             },
@@ -81,8 +88,18 @@ export default function PaymentScreen({ navigation, route }: Props) {
         return;
       }
 
-      // Phase 2: save the paid booking (incl. contact details) in Supabase.
-      goToConfirmation();
+      await saveAndConfirm();
+    } catch (e) {
+      Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const simulatePay = async () => {
+    setProcessing(true);
+    try {
+      await saveAndConfirm(`sim_${Date.now()}`);
     } catch (e) {
       Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
     } finally {
@@ -101,12 +118,13 @@ export default function PaymentScreen({ navigation, route }: Props) {
         <Text style={styles.totalLabel}>{t('payment.total')}</Text>
         <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
         <Text style={styles.totalMeta}>
-          {t(`service.${option}`)} · {date} · {timeSlot}
+          {t(`service.${route.params.option}`)} · {route.params.date} ·{' '}
+          {route.params.timeSlot}
         </Text>
         <Text style={styles.totalMeta}>
-          {contact.email} · {contact.phone}
+          {route.params.contact.email} · {route.params.contact.phone}
         </Text>
-        <Text style={styles.totalMeta}>{contact.address}</Text>
+        <Text style={styles.totalMeta}>{route.params.contact.address}</Text>
       </View>
 
       <View style={styles.footer}>
@@ -126,7 +144,8 @@ export default function PaymentScreen({ navigation, route }: Props) {
           <PillButton
             label={t('payment.simulate')}
             variant="outline"
-            onPress={goToConfirmation}
+            onPress={simulatePay}
+            disabled={processing}
           />
         )}
       </View>

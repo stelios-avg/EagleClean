@@ -124,7 +124,15 @@ export default function AccountScreen({ navigation }: Props) {
 
       <LanguageRow />
 
-      <ListRow icon="log-out-outline" label={t('account.signOut')} onPress={signOut} />
+      <ListRow
+        icon="log-out-outline"
+        label={t('account.signOut')}
+        onPress={() => {
+          void signOut().catch((e) =>
+            Alert.alert(t('auth.errorTitle'), (e as Error).message)
+          );
+        }}
+      />
     </ScrollView>
   );
 }

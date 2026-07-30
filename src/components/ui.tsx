@@ -198,6 +198,10 @@ export function FormInput({
   placeholder,
   error,
   keyboardType = 'default',
+  secureTextEntry = false,
+  autoCapitalize = 'none',
+  autoComplete,
+  textContentType,
 }: {
   label: string;
   value: string;
@@ -205,6 +209,10 @@ export function FormInput({
   placeholder?: string;
   error?: string;
   keyboardType?: KeyboardTypeOptions;
+  secureTextEntry?: boolean;
+  autoCapitalize?: React.ComponentProps<typeof TextInput>['autoCapitalize'];
+  autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete'];
+  textContentType?: React.ComponentProps<typeof TextInput>['textContentType'];
 }) {
   return (
     <View style={styles.inputGroup}>
@@ -215,7 +223,11 @@ export function FormInput({
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
         keyboardType={keyboardType}
-        autoCapitalize="none"
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        secureTextEntry={secureTextEntry}
+        autoComplete={autoComplete}
+        textContentType={textContentType}
         style={[styles.input, !!error && { borderColor: '#E5484D' }]}
       />
       {error ? <Text style={styles.inputError}>{error}</Text> : null}
