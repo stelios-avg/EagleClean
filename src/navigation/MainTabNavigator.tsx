@@ -1,6 +1,7 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo } from '../components/ui';
 import HomeScreen from '../screens/tabs/HomeScreen';
@@ -22,6 +23,21 @@ const TAB_ICONS: Record<
   Account: { idle: 'person-circle-outline', active: 'person-circle' },
 };
 
+/** Shrinks long Greek labels instead of truncating with ellipsis. */
+function TabLabel({ label, color }: { label: string; color: string }) {
+  return (
+    <Text
+      style={[styles.tabLabel, { color }]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.72}
+      allowFontScaling={false}
+    >
+      {label}
+    </Text>
+  );
+}
+
 /** Photo behind the logo in the Marketplace header, dimmed for readability. */
 function MarketplaceHeaderBackground() {
   return (
@@ -38,6 +54,9 @@ function MarketplaceHeaderBackground() {
 
 export default function MainTabNavigator() {
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(insets.bottom, 8);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -50,17 +69,33 @@ export default function MainTabNavigator() {
           backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          height: 62,
+          height: 56 + bottomPad,
           paddingTop: 6,
+          paddingBottom: bottomPad,
+        },
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.tabInactive,
-        tabBarLabelStyle: { fontSize: 11, fontFamily: fonts.semiBold },
-        tabBarIcon: ({ color, size, focused }) => (
+        tabBarAllowFontScaling: false,
+        tabBarLabel: ({ color }) => (
+          <TabLabel
+            label={
+              route.name === 'Home'
+                ? t('tab.home')
+                : route.name === 'Marketplace'
+                  ? t('tab.marketplace')
+                  : t('tab.account')
+            }
+            color={color}
+          />
+        ),
+        tabBarIcon: ({ color, focused }) => (
           <Ionicons
             name={focused ? TAB_ICONS[route.name].active : TAB_ICONS[route.name].idle}
             color={color}
-            size={size - 1}
+            size={22}
           />
         ),
       })}
@@ -81,13 +116,21 @@ export default function MainTabNavigator() {
       <Tab.Screen
         name="Account"
         component={AccountScreen}
-        options={{ title: t('tab.account') }}
+        options={{ title: t('tab.account'), headerShown: false }}
       />
     </Tab.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
+  tabLabel: {
+    fontSize: 11,
+    fontFamily: fonts.semiBold,
+    textAlign: 'center',
+    marginTop: 2,
+    width: '100%',
+    paddingHorizontal: 2,
+  },
   headerPhoto: {
     width: '100%',
     height: '100%',

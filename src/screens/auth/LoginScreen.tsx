@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import { FormInput, Heading, PillButton, Subtitle } from '../../components/ui';
+import { FormInput, PillButton } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
-import { colors, spacing } from '../../theme';
+import { colors, fonts } from '../../theme';
 import type { AuthStackParamList } from '../../navigation/types';
+import AuthShell from './AuthShell';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -17,6 +17,8 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const closeModal = () => navigation.getParent()?.goBack();
+
   const handleLogin = async () => {
     if (!email.trim() || password.length < 6) {
       Alert.alert(t('auth.errorTitle'), t('auth.invalidCredentials'));
@@ -25,7 +27,7 @@ export default function LoginScreen({ navigation }: Props) {
     setBusy(true);
     try {
       await signIn(email, password);
-      navigation.getParent()?.goBack();
+      closeModal();
     } catch (e) {
       Alert.alert(t('auth.errorTitle'), (e as Error).message);
     } finally {
@@ -34,65 +36,63 @@ export default function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.icon}>
-          <Ionicons name="lock-closed-outline" size={56} color={colors.accent} />
-        </View>
-        <Heading>{t('auth.loginTitle')}</Heading>
-        <Subtitle>{t('auth.loginSubtitle')}</Subtitle>
-        <View style={{ height: 8 }} />
-        <FormInput
-          label={t('auth.email')}
-          value={email}
-          onChangeText={setEmail}
-          placeholder={t('contact.emailPlaceholder')}
-          keyboardType="email-address"
-          autoComplete="email"
-          textContentType="emailAddress"
-        />
-        <FormInput
-          label={t('auth.password')}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          secureTextEntry
-          autoComplete="password"
-          textContentType="password"
-        />
-        <View style={{ height: 8 }} />
-        <PillButton
-          label={busy ? t('auth.pleaseWait') : t('auth.login')}
-          onPress={handleLogin}
-          disabled={busy}
-        />
-        <PillButton
-          label={t('auth.noAccount')}
-          variant="outline"
+    <AuthShell
+      title={t('auth.loginTitle')}
+      subtitle={t('auth.loginSubtitle')}
+      onClose={closeModal}
+      footer={
+        <Pressable
           onPress={() => navigation.navigate('SignUp')}
           disabled={busy}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+          hitSlop={8}
+          style={({ pressed }) => pressed && { opacity: 0.7 }}
+        >
+          <Text style={styles.footerText}>
+            {t('auth.noAccountPrefix')}{' '}
+            <Text style={styles.footerLink}>{t('auth.noAccountAction')}</Text>
+          </Text>
+        </Pressable>
+      }
+    >
+      <FormInput
+        label={t('auth.email')}
+        value={email}
+        onChangeText={setEmail}
+        placeholder={t('contact.emailPlaceholder')}
+        keyboardType="email-address"
+        autoComplete="email"
+        textContentType="emailAddress"
+        icon="mail-outline"
+      />
+      <FormInput
+        label={t('auth.password')}
+        value={password}
+        onChangeText={setPassword}
+        placeholder="••••••••"
+        secureTextEntry
+        autoComplete="password"
+        textContentType="password"
+        icon="lock-closed-outline"
+      />
+      <View style={{ height: 4 }} />
+      <PillButton
+        label={busy ? t('auth.pleaseWait') : t('auth.login')}
+        onPress={handleLogin}
+        disabled={busy}
+      />
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: spacing.screen,
-    gap: 10,
+  footerText: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
-  icon: {
-    alignItems: 'flex-start',
-    marginBottom: 6,
+  footerLink: {
+    fontFamily: fonts.bold,
+    color: colors.accent,
   },
 });

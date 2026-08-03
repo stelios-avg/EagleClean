@@ -190,7 +190,7 @@ export function ListRow({
   );
 }
 
-/** Labelled text input with inline validation error, used in forms. */
+/** Labelled text input with optional leading icon, password reveal, and error. */
 export function FormInput({
   label,
   value,
@@ -202,6 +202,7 @@ export function FormInput({
   autoCapitalize = 'none',
   autoComplete,
   textContentType,
+  icon,
 }: {
   label: string;
   value: string;
@@ -213,23 +214,44 @@ export function FormInput({
   autoCapitalize?: React.ComponentProps<typeof TextInput>['autoCapitalize'];
   autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete'];
   textContentType?: React.ComponentProps<typeof TextInput>['textContentType'];
+  icon?: keyof typeof Ionicons.glyphMap;
 }) {
+  const [hidden, setHidden] = React.useState(secureTextEntry);
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.inputLabel}>{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        autoCorrect={false}
-        secureTextEntry={secureTextEntry}
-        autoComplete={autoComplete}
-        textContentType={textContentType}
-        style={[styles.input, !!error && { borderColor: '#E5484D' }]}
-      />
+      <View style={[styles.inputWrap, !!error && { borderColor: '#E5484D' }]}>
+        {icon ? (
+          <Ionicons name={icon} size={18} color={colors.textSecondary} style={styles.inputIcon} />
+        ) : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSecondary}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={false}
+          secureTextEntry={hidden}
+          autoComplete={autoComplete}
+          textContentType={textContentType}
+          style={styles.inputField}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            onPress={() => setHidden((v) => !v)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
+          >
+            <Ionicons
+              name={hidden ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={styles.inputError}>{error}</Text> : null}
     </View>
   );
@@ -293,15 +315,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heading: {
-    fontSize: 32,
+    fontSize: 30,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
     letterSpacing: -0.5,
+    lineHeight: 38,
   },
   subtitle: {
     fontSize: 15,
     fontFamily: fonts.regular,
-    lineHeight: 21,
+    lineHeight: 22,
     color: colors.textSecondary,
   },
   pill: {
@@ -326,6 +349,7 @@ const styles = StyleSheet.create({
   pillLabel: {
     fontSize: 16,
     fontFamily: fonts.bold,
+    lineHeight: 22,
   },
   imageCard: {
     borderRadius: radii.card,
@@ -386,6 +410,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: fonts.bold,
     color: colors.textPrimary,
+    lineHeight: 22,
+    flexShrink: 1,
   },
   listRowSublabel: {
     fontSize: 13,
@@ -401,16 +427,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
-  input: {
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radii.row,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surface,
+    minHeight: 52,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  inputField: {
+    flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 16,
     fontSize: 16,
     fontFamily: fonts.medium,
     color: colors.textPrimary,
-    backgroundColor: colors.background,
   },
   inputError: {
     fontSize: 13,

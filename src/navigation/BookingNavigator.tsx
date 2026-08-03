@@ -24,7 +24,7 @@ export default function BookingNavigator() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.accent },
         headerTintColor: colors.textOnDark,
-        headerTitleStyle: { fontFamily: fonts.bold },
+        headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: colors.background },

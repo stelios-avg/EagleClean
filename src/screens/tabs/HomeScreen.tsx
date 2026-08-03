@@ -100,9 +100,13 @@ function SectionHeader({
 }) {
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.15}>
+        {title}
+      </Text>
       <Pressable onPress={onAction} hitSlop={8}>
-        <Text style={styles.sectionAction}>{actionLabel}</Text>
+        <Text style={styles.sectionAction} maxFontSizeMultiplier={1.1}>
+          {actionLabel}
+        </Text>
       </Pressable>
     </View>
   );
@@ -148,7 +152,9 @@ export default function HomeScreen({ navigation }: Props) {
               <LanguageToggle onDark />
             </View>
           </View>
-          <Text style={styles.tagline}>{t('home.tagline')}</Text>
+          <Text style={styles.tagline} maxFontSizeMultiplier={1.15}>
+            {t('home.tagline')}
+          </Text>
 
           {/* Search-style booking CTA */}
           <Pressable
@@ -180,7 +186,11 @@ export default function HomeScreen({ navigation }: Props) {
             <View style={styles.categoryCircle}>
               <Image source={icon} style={styles.categoryIcon} resizeMode="contain" />
             </View>
-            <Text style={styles.categoryLabel} numberOfLines={2}>
+            <Text
+              style={styles.categoryLabel}
+              numberOfLines={3}
+              maxFontSizeMultiplier={1.1}
+            >
               {t(`service.${option}`)}
             </Text>
           </Pressable>
@@ -210,7 +220,9 @@ export default function HomeScreen({ navigation }: Props) {
                 <Text style={styles.priceText}>{formatEuros(SERVICE_PRICES[option])}</Text>
               </View>
             </View>
-            <Text style={styles.featuredTitle}>{t(`service.${option}`)}</Text>
+            <Text style={styles.featuredTitle} maxFontSizeMultiplier={1.15}>
+              {t(`service.${option}`)}
+            </Text>
             <View style={styles.starsRow}>
               {Array.from({ length: 5 }, (_, i) => (
                 <Ionicons key={i} name="star-outline" size={14} color={colors.tabInactive} />
@@ -303,9 +315,11 @@ const styles = StyleSheet.create({
   },
   tagline: {
     color: colors.textOnDark,
-    fontSize: 21,
+    fontSize: 20,
     fontFamily: fonts.extraBold,
     textAlign: 'center',
+    lineHeight: 26,
+    paddingHorizontal: 8,
   },
   searchBar: {
     flexDirection: 'row',
@@ -341,22 +355,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
+    flex: 1,
+    flexShrink: 1,
     fontSize: 19,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
+    paddingRight: 8,
+    lineHeight: 24,
   },
   sectionAction: {
+    flexShrink: 0,
     fontSize: 13,
     fontFamily: fonts.semiBold,
     color: colors.textSecondary,
   },
   categoriesRow: {
     paddingHorizontal: spacing.screen,
-    gap: 16,
+    gap: 10,
+    paddingBottom: 4,
   },
   category: {
     alignItems: 'center',
-    width: 96,
+    width: 118,
   },
   categoryCircle: {
     width: 74,
@@ -377,7 +397,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
     lineHeight: 16,
-    height: 32,
+    width: '100%',
   },
   featuredRow: {
     paddingHorizontal: spacing.screen,
@@ -414,6 +434,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: colors.textPrimary,
     marginTop: 10,
+    lineHeight: 20,
   },
   starsRow: {
     flexDirection: 'row',
