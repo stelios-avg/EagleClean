@@ -40,7 +40,7 @@ function SummaryRow({
 export default function BookingSummaryScreen({ navigation, route }: Props) {
   const { isAuthenticated } = useAuth();
   const { t, locale } = useI18n();
-  const { date, timeSlot, category, option } = route.params;
+  const { date, timeSlot, category, option, squareMeters, extraHours } = route.params;
   const amount = SERVICE_PRICES[option];
 
   const prettyDate = new Date(date).toLocaleDateString(locale, {
@@ -70,7 +70,16 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
             value={t(`service.${option}`)}
           />
           <SummaryRow icon="calendar-outline" label={t('summary.day')} value={prettyDate} />
-          <SummaryRow icon="time-outline" label={t('summary.time')} value={timeSlot} />
+          <SummaryRow
+            icon="time-outline"
+            label={t('summary.time')}
+            value={extraHours > 0 ? `${timeSlot} (+${extraHours})` : timeSlot}
+          />
+          <SummaryRow
+            icon="resize-outline"
+            label={t('summary.sqm')}
+            value={`${squareMeters} m²`}
+          />
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>{t('summary.total')}</Text>

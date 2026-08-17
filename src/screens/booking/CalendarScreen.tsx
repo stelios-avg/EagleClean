@@ -1,8 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { Heading, Subtitle } from '../../components/ui';
+import { Heading, PillButton, Subtitle } from '../../components/ui';
+import {
+  BASE_DURATION_HOURS,
+  DEFAULT_DURATION_HOURS,
+  getSlotStartHours,
+  maxExtraHoursFor,
+  slotLabel,
+} from '../../constants/booking';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, HomeSize } from '../../navigation/types';
@@ -10,13 +27,6 @@ import type { BookingStackParamList, HomeSize } from '../../navigation/types';
 type Props = NativeStackScreenProps<BookingStackParamList, 'Calendar'>;
 
 const HOME_SIZES: HomeSize[] = ['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom'];
-
-/** Mock availability: 1-hour intervals, 08:00-18:00. Phase 2 fetches real slots from Supabase. */
-const SLOTS = Array.from({ length: 10 }, (_, i) => {
-  const start = String(8 + i).padStart(2, '0');
-  const end = String(9 + i).padStart(2, '0');
-  return `${start}:00 - ${end}:00`;
-});
 
 /** Local (not UTC) YYYY-MM-DD, so days don't shift across timezones. */
 function toISODate(d: Date): string {
@@ -43,21 +53,11 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const { t, locale } = useI18n();
   const preselected = route.params?.preselected;
 
-  const continueWithSlot = (date: string, timeSlot: string) => {
-    if (preselected) {
-      // Category was already chosen on the Home screen — skip ServiceSelection.
-      navigation.navigate('BookingSummary', {
-        date,
-        timeSlot,
-        category: (HOME_SIZES as string[]).includes(preselected)
-          ? 'my-home'
-          : 'cleaning-crew',
-        option: preselected,
-      });
-      return;
-    }
-    navigation.navigate('ServiceSelection', { date, timeSlot });
-  };
+  // Slot length follows the chosen service: 2h regular, 3h deep, 4h events.
+  const duration = preselected
+    ? BASE_DURATION_HOURS[preselected]
+    : DEFAULT_DURATION_HOURS;
+  const slotStartHours = useMemo(() => getSlotStartHours(duration), [duration]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -69,6 +69,10 @@ export default function CalendarScreen({ navigation, route }: Props) {
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const [selected, setSelected] = useState<Date | null>(null);
+  const [startHour, setStartHour] = useState<number | null>(null);
+  const [extraHours, setExtraHours] = useState(0);
+  const [sqm, setSqm] = useState('');
+  const [sqmError, setSqmError] = useState(false);
 
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
@@ -95,113 +99,245 @@ export default function CalendarScreen({ navigation, route }: Props) {
     setMonthCursor(new Date(year, month + delta, 1));
   };
 
+  const pickDay = (day: Date) => {
+    setSelected(day);
+    setStartHour(null);
+    setExtraHours(0);
+  };
+
+  const pickSlot = (hour: number) => {
+    setStartHour(hour);
+    setExtraHours(0);
+  };
+
   const selectedPretty = selected?.toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
 
+  const maxExtra = startHour !== null ? maxExtraHoursFor(startHour, duration) : 0;
+  const totalHours = duration + extraHours;
+  const squareMeters = parseInt(sqm, 10);
+  const sqmValid = Number.isFinite(squareMeters) && squareMeters > 0;
+
+  const handleContinue = () => {
+    if (!selected || startHour === null) {
+      return;
+    }
+    if (!sqmValid) {
+      setSqmError(true);
+      return;
+    }
+    Keyboard.dismiss();
+    const date = toISODate(selected);
+    if (preselected) {
+      // Category was already chosen on the Home screen — skip ServiceSelection.
+      navigation.navigate('BookingSummary', {
+        date,
+        timeSlot: slotLabel(startHour, totalHours),
+        category: (HOME_SIZES as string[]).includes(preselected)
+          ? 'my-home'
+          : 'cleaning-crew',
+        option: preselected,
+        squareMeters,
+        extraHours,
+      });
+      return;
+    }
+    navigation.navigate('ServiceSelection', {
+      date,
+      startHour,
+      extraHours,
+      squareMeters,
+    });
+  };
+
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Heading>{t('calendar.title')}</Heading>
-      <Subtitle>{t('calendar.step')}</Subtitle>
-      {preselected ? (
-        <View style={styles.preselectedChip}>
-          <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-          <Text style={styles.preselectedLabel}>{t(`service.${preselected}`)}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.calendarCard}>
-        {/* Month header */}
-        <View style={styles.monthHeader}>
-          <Pressable
-            onPress={() => changeMonth(-1)}
-            disabled={atCurrentMonth}
-            hitSlop={10}
-            style={[styles.monthArrow, atCurrentMonth && { opacity: 0.25 }]}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-          </Pressable>
-          <Text style={styles.monthTitle}>{monthTitle}</Text>
-          <Pressable onPress={() => changeMonth(1)} hitSlop={10} style={styles.monthArrow}>
-            <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
-          </Pressable>
-        </View>
-
-        {/* Weekday labels */}
-        <View style={styles.weekRow}>
-          {weekdayLabels.map((label) => (
-            <Text key={label} style={styles.weekdayLabel}>
-              {label}
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Heading>{t('calendar.title')}</Heading>
+        <Subtitle>{t('calendar.step')}</Subtitle>
+        {preselected ? (
+          <View style={styles.preselectedChip}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+            <Text style={styles.preselectedLabel}>
+              {t(`service.${preselected}`)} · {duration}
+              {t('unit.hoursShort')}
             </Text>
-          ))}
-        </View>
+          </View>
+        ) : null}
 
-        {/* Day grid */}
-        <View style={styles.grid}>
-          {grid.map((day, i) => {
-            if (!day) {
-              return <View key={`empty-${i}`} style={styles.dayCell} />;
-            }
-            const disabled = day < minDate;
-            const isSelected =
-              !!selected && toISODate(day) === toISODate(selected);
-            const isToday = toISODate(day) === toISODate(today);
-            return (
-              <View key={toISODate(day)} style={styles.dayCell}>
-                <Pressable
-                  disabled={disabled}
-                  onPress={() => setSelected(day)}
-                  style={[
-                    styles.dayCircle,
-                    isToday && !isSelected && styles.dayToday,
-                    isSelected && styles.daySelected,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.dayLabel,
-                      disabled && styles.dayDisabled,
-                      isSelected && styles.dayLabelSelected,
-                    ]}
-                  >
-                    {day.getDate()}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          })}
-        </View>
-      </View>
+        <View style={styles.calendarCard}>
+          {/* Month header */}
+          <View style={styles.monthHeader}>
+            <Pressable
+              onPress={() => changeMonth(-1)}
+              disabled={atCurrentMonth}
+              hitSlop={10}
+              style={[styles.monthArrow, atCurrentMonth && { opacity: 0.25 }]}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+            </Pressable>
+            <Text style={styles.monthTitle}>{monthTitle}</Text>
+            <Pressable onPress={() => changeMonth(1)} hitSlop={10} style={styles.monthArrow}>
+              <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
+            </Pressable>
+          </View>
 
-      {/* Time slots for the selected day */}
-      {selected ? (
-        <View style={styles.slotsSection}>
-          <Text style={styles.slotsTitle}>{t('calendar.slotsFor')}</Text>
-          <Text style={styles.slotsDate}>{selectedPretty}</Text>
-          <View style={styles.slotsGrid}>
-            {SLOTS.map((slot) => (
-              <Pressable
-                key={slot}
-                onPress={() => continueWithSlot(toISODate(selected), slot)}
-                style={({ pressed }) => [
-                  styles.slotChip,
-                  pressed && { backgroundColor: colors.surface },
-                ]}
-              >
-                <Text style={styles.slotLabel}>{slot}</Text>
-              </Pressable>
+          {/* Weekday labels */}
+          <View style={styles.weekRow}>
+            {weekdayLabels.map((label) => (
+              <Text key={label} style={styles.weekdayLabel}>
+                {label}
+              </Text>
             ))}
           </View>
+
+          {/* Day grid */}
+          <View style={styles.grid}>
+            {grid.map((day, i) => {
+              if (!day) {
+                return <View key={`empty-${i}`} style={styles.dayCell} />;
+              }
+              const disabled = day < minDate;
+              const isSelected =
+                !!selected && toISODate(day) === toISODate(selected);
+              const isToday = toISODate(day) === toISODate(today);
+              return (
+                <View key={toISODate(day)} style={styles.dayCell}>
+                  <Pressable
+                    disabled={disabled}
+                    onPress={() => pickDay(day)}
+                    style={[
+                      styles.dayCircle,
+                      isToday && !isSelected && styles.dayToday,
+                      isSelected && styles.daySelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayLabel,
+                        disabled && styles.dayDisabled,
+                        isSelected && styles.dayLabelSelected,
+                      ]}
+                    >
+                      {day.getDate()}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
         </View>
-      ) : (
-        <View style={styles.hintRow}>
-          <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
-          <Text style={styles.hintText}>{t('calendar.pickDayHint')}</Text>
-        </View>
-      )}
-    </ScrollView>
+
+        {/* Time slots for the selected day */}
+        {selected ? (
+          <View style={styles.slotsSection}>
+            <Text style={styles.slotsTitle}>{t('calendar.slotsFor')}</Text>
+            <Text style={styles.slotsDate}>{selectedPretty}</Text>
+            <View style={styles.slotsGrid}>
+              {slotStartHours.map((hour) => {
+                const active = startHour === hour;
+                return (
+                  <Pressable
+                    key={hour}
+                    onPress={() => pickSlot(hour)}
+                    style={({ pressed }) => [
+                      styles.slotChip,
+                      active && styles.slotChipActive,
+                      pressed && !active && { backgroundColor: colors.surface },
+                    ]}
+                  >
+                    <Text style={[styles.slotLabel, active && styles.slotLabelActive]}>
+                      {slotLabel(hour, duration)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {startHour !== null ? (
+              <>
+                {/* Extra hours stepper */}
+                <View style={styles.optionCard}>
+                  <View style={styles.optionCopy}>
+                    <Text style={styles.optionLabel}>{t('calendar.extraHours')}</Text>
+                    <Text style={styles.optionHint}>
+                      {slotLabel(startHour, totalHours)} · {totalHours}{' '}
+                      {t('unit.hours')}
+                    </Text>
+                  </View>
+                  <View style={styles.stepper}>
+                    <Pressable
+                      onPress={() => setExtraHours((v) => Math.max(0, v - 1))}
+                      disabled={extraHours === 0}
+                      style={[styles.stepBtn, extraHours === 0 && styles.stepBtnDisabled]}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="remove" size={20} color={colors.textOnDark} />
+                    </Pressable>
+                    <Text style={styles.stepValue}>+{extraHours}</Text>
+                    <Pressable
+                      onPress={() => setExtraHours((v) => Math.min(maxExtra, v + 1))}
+                      disabled={extraHours >= maxExtra}
+                      style={[styles.stepBtn, extraHours >= maxExtra && styles.stepBtnDisabled]}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="add" size={20} color={colors.textOnDark} />
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Mandatory square meters */}
+                <View style={styles.optionCard}>
+                  <View style={styles.optionCopy}>
+                    <Text style={styles.optionLabel}>{t('calendar.sqm')}</Text>
+                    <Text style={styles.optionHint}>{t('calendar.sqmHint')}</Text>
+                  </View>
+                  <View
+                    style={[styles.sqmInputWrap, sqmError && !sqmValid && styles.sqmInputError]}
+                  >
+                    <TextInput
+                      value={sqm}
+                      onChangeText={(v) => {
+                        setSqm(v.replace(/[^0-9]/g, ''));
+                        setSqmError(false);
+                      }}
+                      placeholder={t('calendar.sqmPlaceholder')}
+                      placeholderTextColor={colors.textSecondary}
+                      keyboardType="number-pad"
+                      maxLength={5}
+                      style={styles.sqmInput}
+                    />
+                    <Text style={styles.sqmUnit}>m²</Text>
+                  </View>
+                </View>
+                {sqmError && !sqmValid ? (
+                  <Text style={styles.errorText}>{t('calendar.sqmError')}</Text>
+                ) : null}
+
+                <View style={{ height: 6 }} />
+                <PillButton label={t('calendar.continue')} onPress={handleContinue} />
+              </>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.hintRow}>
+            <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+            <Text style={styles.hintText}>{t('calendar.pickDayHint')}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -338,10 +474,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
   },
+  slotChipActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accent,
+  },
   slotLabel: {
     fontSize: 15,
     fontFamily: fonts.bold,
     color: colors.textPrimary,
+  },
+  slotLabelActive: {
+    color: colors.textOnDark,
+  },
+  optionCard: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderRadius: radii.row,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.background,
+  },
+  optionCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  optionLabel: {
+    fontSize: 15,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+  },
+  optionHint: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  stepBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnDisabled: {
+    opacity: 0.3,
+  },
+  stepValue: {
+    minWidth: 32,
+    textAlign: 'center',
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+  },
+  sqmInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    backgroundColor: colors.surface,
+    minWidth: 110,
+  },
+  sqmInputError: {
+    borderColor: '#E5484D',
+  },
+  sqmInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+    textAlign: 'right',
+  },
+  sqmUnit: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
+  },
+  errorText: {
+    marginTop: 6,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: '#E5484D',
   },
   hintRow: {
     flexDirection: 'row',

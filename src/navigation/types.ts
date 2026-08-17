@@ -10,10 +10,14 @@ export type CrewService = 'Deep Cleaning' | 'Events';
 export type BookingSelection = {
   /** ISO date string, e.g. "2026-08-01" */
   date: string;
-  /** e.g. "09:00 - 10:00" */
+  /** Final visit range including extra hours, e.g. "08:00 - 12:00" */
   timeSlot: string;
   category: ServiceCategory;
   option: HomeSize | CrewService;
+  /** Size of the home/venue in m² — mandatory before continuing. */
+  squareMeters: number;
+  /** Hours added on top of the base slot via the + stepper. */
+  extraHours: number;
 };
 
 /** Mandatory customer details collected before payment. */
@@ -28,7 +32,16 @@ export type ContactDetails = {
 export type BookingStackParamList = {
   /** `preselected` skips the ServiceSelection step (set when a category is tapped on Home). */
   Calendar: { preselected?: HomeSize | CrewService } | undefined;
-  ServiceSelection: { date: string; timeSlot: string };
+  /**
+   * The final time range depends on the service duration, so before a
+   * service is chosen we carry the raw start hour + extras instead of a slot.
+   */
+  ServiceSelection: {
+    date: string;
+    startHour: number;
+    extraHours: number;
+    squareMeters: number;
+  };
   BookingSummary: BookingSelection;
   ContactDetails: BookingSelection;
   Payment: BookingSelection & { contact: ContactDetails };

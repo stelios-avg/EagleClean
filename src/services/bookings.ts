@@ -31,6 +31,8 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       contact_email: input.contact.email.trim(),
       contact_phone: input.contact.phone.trim(),
       contact_address: input.contact.address.trim(),
+      square_meters: input.squareMeters,
+      extra_hours: input.extraHours,
       amount_cents: SERVICE_PRICES[input.option],
       status: input.status ?? 'paid',
       payment_intent_id: input.paymentIntentId ?? null,

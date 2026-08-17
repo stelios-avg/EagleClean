@@ -1,5 +1,7 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import CalendarScreen from '../screens/booking/CalendarScreen';
 import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 import BookingSummaryScreen from '../screens/booking/BookingSummaryScreen';
@@ -34,7 +36,21 @@ export default function BookingNavigator() {
       <Stack.Screen
         name="Calendar"
         component={CalendarScreen}
-        options={{ title: t('nav.selectDay') }}
+        options={({ navigation }) => ({
+          title: t('nav.selectDay'),
+          // Calendar is the first screen of this stack, so the native back
+          // arrow never shows — add one that dismisses the whole flow.
+          headerLeft: () => (
+            <Pressable
+              onPress={() => navigation.getParent()?.goBack()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.textOnDark} />
+            </Pressable>
+          ),
+        })}
       />
       <Stack.Screen
         name="ServiceSelection"

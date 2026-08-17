@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Heading, ListRow, Subtitle } from '../../components/ui';
+import { BASE_DURATION_HOURS, slotLabel } from '../../constants/booking';
 import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, spacing } from '../../theme';
@@ -9,6 +10,7 @@ import type {
   BookingStackParamList,
   CrewService,
   HomeSize,
+  ServiceCategory,
 } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceSelection'>;
@@ -27,13 +29,22 @@ const CREW_SERVICES: { service: CrewService; icon: 'sparkles-outline' | 'people-
 
 export default function ServiceSelectionScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const { date, timeSlot } = route.params;
+  const { date, startHour, extraHours, squareMeters } = route.params;
 
-  const selectHome = (option: HomeSize) =>
-    navigation.navigate('BookingSummary', { date, timeSlot, category: 'my-home', option });
+  // The visit length depends on the service, so the final time range is
+  // computed here, once the option is known.
+  const select = (category: ServiceCategory, option: HomeSize | CrewService) =>
+    navigation.navigate('BookingSummary', {
+      date,
+      timeSlot: slotLabel(startHour, BASE_DURATION_HOURS[option] + extraHours),
+      category,
+      option,
+      squareMeters,
+      extraHours,
+    });
 
-  const selectCrew = (option: CrewService) =>
-    navigation.navigate('BookingSummary', { date, timeSlot, category: 'cleaning-crew', option });
+  const sublabelFor = (option: HomeSize | CrewService) =>
+    `${formatEuros(SERVICE_PRICES[option])} · ${BASE_DURATION_HOURS[option]} ${t('unit.hours')}`;
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -46,8 +57,8 @@ export default function ServiceSelectionScreen({ navigation, route }: Props) {
           key={size}
           icon={icon}
           label={t(`service.${size}`)}
-          sublabel={formatEuros(SERVICE_PRICES[size])}
-          onPress={() => selectHome(size)}
+          sublabel={sublabelFor(size)}
+          onPress={() => select('my-home', size)}
         />
       ))}
 
@@ -57,8 +68,8 @@ export default function ServiceSelectionScreen({ navigation, route }: Props) {
           key={service}
           icon={icon}
           label={t(`service.${service}`)}
-          sublabel={formatEuros(SERVICE_PRICES[service])}
-          onPress={() => selectCrew(service)}
+          sublabel={sublabelFor(service)}
+          onPress={() => select('cleaning-crew', service)}
         />
       ))}
     </ScrollView>
