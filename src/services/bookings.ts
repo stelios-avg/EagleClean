@@ -1,4 +1,5 @@
-import { SERVICE_PRICES } from '../constants/payments';
+import type { BookedRange } from '../constants/booking';
+import { bookingTotalCents } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { BookingSelection, ContactDetails } from '../navigation/types';
 import type { Booking, BookingStatus } from '../types/database';
@@ -33,7 +34,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       contact_address: input.contact.address.trim(),
       square_meters: input.squareMeters,
       extra_hours: input.extraHours,
-      amount_cents: SERVICE_PRICES[input.option],
+      amount_cents: bookingTotalCents(input.option, input.extraHours),
       status: input.status ?? 'paid',
       payment_intent_id: input.paymentIntentId ?? null,
     })
@@ -58,4 +59,30 @@ export async function listMyBookings(): Promise<Booking[]> {
   }
 
   return data ?? [];
+}
+
+/** Customer-side cancellation; RLS only allows it while pending/paid. */
+export async function cancelBooking(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Occupied time ranges for a day, via a SECURITY DEFINER function so
+ * guests can see availability without seeing anyone's booking details.
+ */
+export async function getBookedSlots(date: string): Promise<BookedRange[]> {
+  const { data, error } = await supabase.rpc('get_booked_slots', { day: date });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data as BookedRange[] | null) ?? [];
 }

@@ -238,6 +238,13 @@ export default async function BookingsPage({
                       <td className="px-5 py-4">
                         <p className="font-semibold text-zinc-900">{b.option}</p>
                         <p className="text-xs text-zinc-500">{b.category}</p>
+                        {(b.square_meters || b.extra_hours > 0) && (
+                          <p className="mt-1 text-xs font-semibold text-blue-700">
+                            {b.square_meters ? `${b.square_meters} m²` : ''}
+                            {b.square_meters && b.extra_hours > 0 ? ' · ' : ''}
+                            {b.extra_hours > 0 ? `+${b.extra_hours} ώρες` : ''}
+                          </p>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <p className="font-semibold text-zinc-900">

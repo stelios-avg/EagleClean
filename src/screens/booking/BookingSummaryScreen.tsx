@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Heading, PillButton, Subtitle } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
-import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
+import { EXTRA_HOUR_PRICE_CENTS } from '../../constants/booking';
+import { bookingTotalCents, formatEuros } from '../../constants/payments';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
 
@@ -41,7 +42,7 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
   const { isAuthenticated } = useAuth();
   const { t, locale } = useI18n();
   const { date, timeSlot, category, option, squareMeters, extraHours } = route.params;
-  const amount = SERVICE_PRICES[option];
+  const amount = bookingTotalCents(option, extraHours);
 
   const prettyDate = new Date(date).toLocaleDateString(locale, {
     weekday: 'long',
@@ -80,6 +81,13 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
             label={t('summary.sqm')}
             value={`${squareMeters} m²`}
           />
+          {extraHours > 0 ? (
+            <SummaryRow
+              icon="add-circle-outline"
+              label={t('summary.extraHours')}
+              value={`${extraHours} × ${formatEuros(EXTRA_HOUR_PRICE_CENTS)}`}
+            />
+          ) : null}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>{t('summary.total')}</Text>

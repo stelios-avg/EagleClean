@@ -105,7 +105,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_booked_slots: {
+        Args: { day: string };
+        Returns: { start_hour: number; end_hour: number }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

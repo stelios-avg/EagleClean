@@ -16,6 +16,9 @@ export const BASE_DURATION_HOURS: Record<HomeSize | CrewService, number> = {
 
 export const DEFAULT_DURATION_HOURS = 2;
 
+/** Flat rate charged for every hour added on top of the base slot. */
+export const EXTRA_HOUR_PRICE_CENTS = 2000;
+
 const DAY_START_HOUR = 8;
 const DAY_END_HOUR = 18;
 /** Extra hours may push the end of a visit up to this hour. */
@@ -43,4 +46,36 @@ export function getSlotStartHours(durationHours: number): number[] {
 /** How many extra hours can be added to a slot before hitting the day cap. */
 export function maxExtraHoursFor(startHour: number, durationHours: number): number {
   return Math.max(0, Math.min(MAX_EXTRA_HOURS, LATEST_END_HOUR - (startHour + durationHours)));
+}
+
+/** An already-booked time range on a given day (from the availability RPC). */
+export type BookedRange = { start_hour: number; end_hour: number };
+
+/** True when a candidate slot overlaps any active booking of the day. */
+export function isSlotTaken(
+  startHour: number,
+  durationHours: number,
+  booked: BookedRange[]
+): boolean {
+  const end = startHour + durationHours;
+  return booked.some((b) => startHour < b.end_hour && end > b.start_hour);
+}
+
+/**
+ * Extra-hours cap that also respects the next booking of the day, so an
+ * extended visit never runs into someone else's slot.
+ */
+export function maxExtraHoursWithBookings(
+  startHour: number,
+  durationHours: number,
+  booked: BookedRange[]
+): number {
+  const baseEnd = startHour + durationHours;
+  let cap = maxExtraHoursFor(startHour, durationHours);
+  for (const b of booked) {
+    if (b.start_hour >= baseEnd) {
+      cap = Math.min(cap, b.start_hour - baseEnd);
+    }
+  }
+  return Math.max(0, cap);
 }

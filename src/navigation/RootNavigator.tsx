@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from '../screens/WelcomeScreen';
+import MyBookingsScreen from '../screens/account/MyBookingsScreen';
+import ProfileScreen from '../screens/account/ProfileScreen';
 import MainTabNavigator from './MainTabNavigator';
 import BookingNavigator from './BookingNavigator';
 import AuthNavigator from './AuthNavigator';
@@ -37,6 +39,8 @@ export default function RootNavigator() {
         component={AuthNavigator}
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
+      <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 }

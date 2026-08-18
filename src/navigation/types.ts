@@ -64,6 +64,8 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   BookingFlow: NavigatorScreenParams<BookingStackParamList> | undefined;
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
+  MyBookings: undefined;
+  Profile: undefined;
 };
 
 // Makes useNavigation() fully typed everywhere without extra annotations.

@@ -223,12 +223,19 @@ export default function AccountScreen({ navigation }: Props) {
           icon="receipt-outline"
           label={t('account.orders')}
           sublabel={t('account.ordersSub')}
-          onPress={() => Alert.alert(t('account.orders'), t('account.ordersSoon'))}
+          onPress={() => navigation.navigate('MyBookings')}
         />
       </View>
 
       <Text style={styles.sectionLabel}>{t('account.sectionSettings')}</Text>
       <View style={styles.menuCard}>
+        <MenuRow
+          icon="person-outline"
+          label={t('account.profile')}
+          sublabel={t('account.profileSub')}
+          onPress={() => navigation.navigate('Profile')}
+        />
+        <View style={styles.menuDivider} />
         <View style={styles.langRow}>
           <View style={styles.menuIcon}>
             <Ionicons name="globe-outline" size={20} color={colors.accent} />

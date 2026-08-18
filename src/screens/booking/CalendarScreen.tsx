@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -17,9 +18,12 @@ import {
   BASE_DURATION_HOURS,
   DEFAULT_DURATION_HOURS,
   getSlotStartHours,
-  maxExtraHoursFor,
+  isSlotTaken,
+  maxExtraHoursWithBookings,
   slotLabel,
+  type BookedRange,
 } from '../../constants/booking';
+import { getBookedSlots } from '../../services/bookings';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, HomeSize } from '../../navigation/types';
@@ -73,6 +77,37 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const [extraHours, setExtraHours] = useState(0);
   const [sqm, setSqm] = useState('');
   const [sqmError, setSqmError] = useState(false);
+  const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  // Gray out slots already taken by other bookings on the chosen day.
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+    let stale = false;
+    setLoadingSlots(true);
+    getBookedSlots(toISODate(selected))
+      .then((ranges) => {
+        if (!stale) {
+          setBookedRanges(ranges);
+        }
+      })
+      .catch(() => {
+        // Availability is best-effort — on failure show everything.
+        if (!stale) {
+          setBookedRanges([]);
+        }
+      })
+      .finally(() => {
+        if (!stale) {
+          setLoadingSlots(false);
+        }
+      });
+    return () => {
+      stale = true;
+    };
+  }, [selected]);
 
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
@@ -103,6 +138,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
     setSelected(day);
     setStartHour(null);
     setExtraHours(0);
+    setBookedRanges([]);
   };
 
   const pickSlot = (hour: number) => {
@@ -116,8 +152,19 @@ export default function CalendarScreen({ navigation, route }: Props) {
     month: 'long',
   });
 
-  const maxExtra = startHour !== null ? maxExtraHoursFor(startHour, duration) : 0;
+  const maxExtra =
+    startHour !== null
+      ? maxExtraHoursWithBookings(startHour, duration, bookedRanges)
+      : 0;
+  // Booked ranges may load after a slot was picked — never exceed the cap.
+  useEffect(() => {
+    setExtraHours((v) => Math.min(v, maxExtra));
+  }, [maxExtra]);
+
   const totalHours = duration + extraHours;
+  const allSlotsTaken =
+    !loadingSlots &&
+    slotStartHours.every((hour) => isSlotTaken(hour, duration, bookedRanges));
   const squareMeters = parseInt(sqm, 10);
   const sqmValid = Number.isFinite(squareMeters) && squareMeters > 0;
 
@@ -244,26 +291,44 @@ export default function CalendarScreen({ navigation, route }: Props) {
           <View style={styles.slotsSection}>
             <Text style={styles.slotsTitle}>{t('calendar.slotsFor')}</Text>
             <Text style={styles.slotsDate}>{selectedPretty}</Text>
-            <View style={styles.slotsGrid}>
-              {slotStartHours.map((hour) => {
-                const active = startHour === hour;
-                return (
-                  <Pressable
-                    key={hour}
-                    onPress={() => pickSlot(hour)}
-                    style={({ pressed }) => [
-                      styles.slotChip,
-                      active && styles.slotChipActive,
-                      pressed && !active && { backgroundColor: colors.surface },
-                    ]}
-                  >
-                    <Text style={[styles.slotLabel, active && styles.slotLabelActive]}>
-                      {slotLabel(hour, duration)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            {loadingSlots ? (
+              <ActivityIndicator color={colors.accent} style={{ marginVertical: 16 }} />
+            ) : allSlotsTaken ? (
+              <View style={styles.hintRow}>
+                <Ionicons name="close-circle-outline" size={18} color={colors.textSecondary} />
+                <Text style={styles.hintText}>{t('calendar.noSlots')}</Text>
+              </View>
+            ) : (
+              <View style={styles.slotsGrid}>
+                {slotStartHours.map((hour) => {
+                  const taken = isSlotTaken(hour, duration, bookedRanges);
+                  const active = startHour === hour;
+                  return (
+                    <Pressable
+                      key={hour}
+                      disabled={taken}
+                      onPress={() => pickSlot(hour)}
+                      style={({ pressed }) => [
+                        styles.slotChip,
+                        active && styles.slotChipActive,
+                        taken && styles.slotChipTaken,
+                        pressed && !active && !taken && { backgroundColor: colors.surface },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.slotLabel,
+                          active && styles.slotLabelActive,
+                          taken && styles.slotLabelTaken,
+                        ]}
+                      >
+                        {slotLabel(hour, duration)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
 
             {startHour !== null ? (
               <>
@@ -478,6 +543,10 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: colors.accent,
   },
+  slotChipTaken: {
+    backgroundColor: colors.surface,
+    borderColor: colors.surface,
+  },
   slotLabel: {
     fontSize: 15,
     fontFamily: fonts.bold,
@@ -485,6 +554,10 @@ const styles = StyleSheet.create({
   },
   slotLabelActive: {
     color: colors.textOnDark,
+  },
+  slotLabelTaken: {
+    color: colors.border,
+    textDecorationLine: 'line-through',
   },
   optionCard: {
     marginTop: 12,

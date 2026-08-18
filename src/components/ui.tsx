@@ -287,6 +287,35 @@ export function LanguageToggle({ onDark = false }: { onDark?: boolean }) {
   );
 }
 
+/** Blue header with a back arrow for screens pushed on the root stack. */
+export function SubpageHeader({
+  title,
+  onBack,
+  topInset,
+}: {
+  title: string;
+  onBack: () => void;
+  topInset: number;
+}) {
+  return (
+    <View style={[styles.subpageHeader, { paddingTop: topInset + 6 }]}>
+      <Pressable
+        onPress={onBack}
+        hitSlop={12}
+        style={styles.subpageBack}
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+      >
+        <Ionicons name="chevron-back" size={24} color={colors.textOnDark} />
+      </Pressable>
+      <Text style={styles.subpageTitle} numberOfLines={1}>
+        {title}
+      </Text>
+      <View style={styles.subpageBack} />
+    </View>
+  );
+}
+
 /** Compact centered chip, used for the time slot grid. */
 export function Chip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
@@ -475,6 +504,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
+  },
+  subpageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.accent,
+    paddingHorizontal: 10,
+    paddingBottom: 12,
+  },
+  subpageBack: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subpageTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: colors.textOnDark,
+    fontSize: 17,
+    fontFamily: fonts.bold,
   },
   chip: {
     flex: 1,

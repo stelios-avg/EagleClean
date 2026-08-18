@@ -49,6 +49,8 @@ export type Database = {
           contact_email: string;
           contact_phone: string;
           contact_address: string;
+          square_meters: number | null;
+          extra_hours: number;
           amount_cents: number;
           status: BookingStatus;
           payment_intent_id: string | null;

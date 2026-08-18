@@ -1,4 +1,5 @@
 import type { CrewService, HomeSize } from '../navigation/types';
+import { EXTRA_HOUR_PRICE_CENTS } from './booking';
 
 /**
  * Stripe publishable key (test mode). Safe to ship in the client.
@@ -27,4 +28,12 @@ export const SERVICE_PRICES: Record<HomeSize | CrewService, number> = {
 
 export function formatEuros(cents: number): string {
   return `€${(cents / 100).toFixed(2)}`;
+}
+
+/** Base service price plus the flat per-hour charge for extra hours. */
+export function bookingTotalCents(
+  option: HomeSize | CrewService,
+  extraHours: number
+): number {
+  return SERVICE_PRICES[option] + extraHours * EXTRA_HOUR_PRICE_CENTS;
 }

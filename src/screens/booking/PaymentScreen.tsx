@@ -12,7 +12,7 @@ import {
   CURRENCY_CODE,
   MERCHANT_COUNTRY_CODE,
   MERCHANT_NAME,
-  SERVICE_PRICES,
+  bookingTotalCents,
   formatEuros,
 } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -35,7 +35,7 @@ async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> 
 
 export default function PaymentScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const amount = SERVICE_PRICES[route.params.option];
+  const amount = bookingTotalCents(route.params.option, route.params.extraHours);
 
   const [platformPayAvailable, setPlatformPayAvailable] = useState(false);
   const [processing, setProcessing] = useState(false);
