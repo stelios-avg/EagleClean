@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { saveAdminNotes, updateBookingStatus } from './actions';
+import { deleteBooking, saveAdminNotes, updateBookingStatus } from './actions';
 import type { BookingStatus } from '@/lib/types';
 
 export function BookingRowActions({
@@ -37,10 +37,30 @@ export function BookingRowActions({
     });
   };
 
+  const remove = () => {
+    if (!window.confirm('Οριστική διαγραφή της κράτησης; Δεν αναιρείται.')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await deleteBooking(bookingId);
+      if (result.error) {
+        setError(result.error);
+      }
+    });
+  };
+
+  // Only offer the transitions that make sense for the current status:
+  // pending/paid -> accept or reject, accepted -> complete or reject.
+  // Final states (completed, rejected, cancelled) only allow deletion.
+  const canAccept = status === 'pending' || status === 'paid';
+  const canReject = status === 'pending' || status === 'paid' || status === 'accepted';
+  const canComplete = status === 'accepted';
+
   return (
     <div className="flex min-w-[220px] flex-col gap-2.5">
       <div className="flex flex-wrap gap-2">
-        {status !== 'accepted' && (
+        {canAccept && (
           <button
             type="button"
             disabled={pending}
@@ -50,17 +70,7 @@ export function BookingRowActions({
             Accept
           </button>
         )}
-        {status !== 'rejected' && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => run('rejected')}
-            className="rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
-          >
-            Reject
-          </button>
-        )}
-        {status === 'accepted' && (
+        {canComplete && (
           <button
             type="button"
             disabled={pending}
@@ -70,6 +80,24 @@ export function BookingRowActions({
             Completed
           </button>
         )}
+        {canReject && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run('rejected')}
+            className="rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+          >
+            Reject
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={remove}
+          className="rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+        >
+          Διαγραφή
+        </button>
       </div>
       <div className="flex gap-2">
         <input

@@ -22,6 +22,20 @@ export async function updateBookingStatus(bookingId: string, status: BookingStat
   return { ok: true as const };
 }
 
+export async function deleteBooking(bookingId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/bookings');
+  return { ok: true as const };
+}
+
 export async function saveAdminNotes(bookingId: string, notes: string) {
   await requireAdmin();
   const supabase = await createClient();
