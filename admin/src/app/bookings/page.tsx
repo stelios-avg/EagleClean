@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { BookingStatus } from '@/lib/types';
 import { logout } from '../login/actions';
 import { BookingRowActions } from './booking-row-actions';
+import { LiveRefresh } from './live-refresh';
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
   pending: 'Εκκρεμεί',
@@ -110,7 +111,10 @@ export default async function BookingsPage({
               <p className="text-[11px] font-bold tracking-[0.16em] text-blue-300">
                 ADMIN PANEL
               </p>
-              <h1 className="text-xl font-extrabold tracking-tight">Κρατήσεις</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-extrabold tracking-tight">Κρατήσεις</h1>
+                <LiveRefresh />
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
