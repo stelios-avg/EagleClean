@@ -1,28 +1,65 @@
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { FormInput, Heading, PillButton, Subtitle } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
+import { getMyProfile, saveContactInfo } from '../../services/profile';
+import { EMAIL_RE, PHONE_RE } from '../../utils/contact';
 import { colors, spacing } from '../../theme';
 import type { BookingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ContactDetails'>;
 
-const EMAIL_RE = /^\S+@\S+\.\S+$/;
-const PHONE_RE = /^[+\d][\d\s-]{6,}$/;
-
 /**
- * Mandatory step before payment: the customer must provide email, phone
- * and address. Validation blocks the continue button until all are valid.
- * Phase 2: these details are saved on the booking record in Supabase.
+ * Shown only when the signed-in customer's profile is missing contact
+ * details (first booking, usually). Fields are prefilled from the
+ * profile, and whatever the customer enters is saved back so the next
+ * booking skips this step entirely.
  */
 export default function ContactDetailsScreen({ navigation, route }: Props) {
   const { t } = useI18n();
+  const { session } = useAuth();
 
+  const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getMyProfile()
+      .then((profile) => {
+        if (!active) {
+          return;
+        }
+        setEmail(profile.email ?? session?.email ?? '');
+        setPhone(profile.phone ?? '');
+        setAddress(profile.address ?? '');
+      })
+      .catch(() => {
+        if (active) {
+          setEmail(session?.email ?? '');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const emailValid = EMAIL_RE.test(email.trim());
   const phoneValid = PHONE_RE.test(phone.trim());
@@ -34,6 +71,8 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
     if (!allValid) {
       return;
     }
+    // Persist for future bookings; a failure here shouldn't block payment.
+    void saveContactInfo({ phone, address }).catch(() => {});
     navigation.navigate('Payment', {
       ...route.params,
       contact: {
@@ -44,6 +83,14 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
     });
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
@@ -51,7 +98,7 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Heading>{t('contact.title')}</Heading>
-        <Subtitle>{t('contact.step')}</Subtitle>
+        <Subtitle>{t('contact.saveHint')}</Subtitle>
 
         <View style={styles.form}>
           <FormInput
@@ -93,6 +140,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     padding: spacing.screen,

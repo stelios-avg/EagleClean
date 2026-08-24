@@ -31,6 +31,12 @@
       ],
       "expo-font",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Το EagleClean χρησιμοποιεί τη θέση σου για να επιβεβαιώσει ότι βρίσκεσαι στην περιοχή εξυπηρέτησης (Λευκωσία)."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/logo.png",

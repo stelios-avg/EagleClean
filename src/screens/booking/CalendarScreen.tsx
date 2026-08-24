@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -24,6 +25,7 @@ import {
   type BookedRange,
 } from '../../constants/booking';
 import { getBookedSlots } from '../../services/bookings';
+import { checkServiceArea, type ServiceAreaStatus } from '../../services/serviceArea';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, HomeSize } from '../../navigation/types';
@@ -79,6 +81,19 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const [sqmError, setSqmError] = useState(false);
   const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  // Bookings are only accepted from inside Nicosia — verified via the
+  // device location before the calendar is shown.
+  const [areaStatus, setAreaStatus] = useState<ServiceAreaStatus | 'checking'>(
+    'checking'
+  );
+  const runAreaCheck = useCallback(() => {
+    setAreaStatus('checking');
+    checkServiceArea().then(setAreaStatus);
+  }, []);
+  useEffect(() => {
+    runAreaCheck();
+  }, [runAreaCheck]);
 
   // Gray out slots already taken by other bookings on the chosen day.
   useEffect(() => {
@@ -199,6 +214,56 @@ export default function CalendarScreen({ navigation, route }: Props) {
       squareMeters,
     });
   };
+
+  if (areaStatus !== 'inside') {
+    return (
+      <View style={[styles.root, styles.areaCenter]}>
+        {areaStatus === 'checking' ? (
+          <>
+            <ActivityIndicator color={colors.accent} size="large" />
+            <Text style={styles.areaBody}>{t('area.checking')}</Text>
+          </>
+        ) : (
+          <>
+            <View style={styles.areaIcon}>
+              <Ionicons
+                name={
+                  areaStatus === 'outside'
+                    ? 'location-outline'
+                    : 'navigate-circle-outline'
+                }
+                size={36}
+                color={colors.accent}
+              />
+            </View>
+            <Text style={styles.areaTitle}>
+              {areaStatus === 'outside'
+                ? t('area.outsideTitle')
+                : areaStatus === 'permission-denied'
+                  ? t('area.deniedTitle')
+                  : t('area.unavailableTitle')}
+            </Text>
+            <Text style={styles.areaBody}>
+              {areaStatus === 'outside'
+                ? t('area.outsideBody')
+                : areaStatus === 'permission-denied'
+                  ? t('area.deniedBody')
+                  : t('area.unavailableBody')}
+            </Text>
+            <View style={styles.areaActions}>
+              {areaStatus === 'permission-denied' ? (
+                <PillButton
+                  label={t('area.openSettings')}
+                  onPress={() => Linking.openSettings()}
+                />
+              ) : null}
+              <PillButton label={t('area.retry')} onPress={runAreaCheck} />
+            </View>
+          </>
+        )}
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -656,5 +721,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
+  },
+  areaCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.screen * 1.5,
+    gap: 12,
+  },
+  areaIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  areaTitle: {
+    fontSize: 20,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  areaBody: {
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  areaActions: {
+    alignSelf: 'stretch',
+    gap: 10,
+    marginTop: 10,
   },
 });

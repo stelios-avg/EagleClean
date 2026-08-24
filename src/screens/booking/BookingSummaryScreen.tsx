@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { EXTRA_HOUR_PRICE_CENTS } from '../../constants/booking';
 import { bookingTotalCents, formatEuros } from '../../constants/payments';
+import { getMyProfile } from '../../services/profile';
+import { completeContactFrom } from '../../utils/contact';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
 
@@ -39,10 +41,34 @@ function SummaryRow({
  * users continue to the mandatory Contact Details step, then Payment.
  */
 export default function BookingSummaryScreen({ navigation, route }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
   const { t, locale } = useI18n();
+  const [checking, setChecking] = useState(false);
   const { date, timeSlot, category, option, squareMeters, extraHours } = route.params;
   const amount = bookingTotalCents(option, extraHours);
+
+  // Returning customers with a complete profile (email, phone, address)
+  // skip the contact-details step and go straight to payment.
+  const continueBooking = async () => {
+    setChecking(true);
+    let contact: ReturnType<typeof completeContactFrom> = null;
+    try {
+      const profile = await getMyProfile();
+      contact = completeContactFrom(
+        profile.email ?? session?.email,
+        profile.phone,
+        profile.address
+      );
+    } catch {
+      // Profile unavailable — fall back to asking for details.
+    }
+    setChecking(false);
+    if (contact) {
+      navigation.navigate('Payment', { ...route.params, contact });
+    } else {
+      navigation.navigate('ContactDetails', route.params);
+    }
+  };
 
   const prettyDate = new Date(date).toLocaleDateString(locale, {
     weekday: 'long',
@@ -99,8 +125,9 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
       <View style={styles.footer}>
         {isAuthenticated ? (
           <PillButton
-            label={t('summary.continue')}
-            onPress={() => navigation.navigate('ContactDetails', route.params)}
+            label={checking ? t('auth.pleaseWait') : t('summary.continue')}
+            onPress={continueBooking}
+            disabled={checking}
           />
         ) : (
           <>

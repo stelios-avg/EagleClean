@@ -29,12 +29,14 @@ export default function ProfileScreen({ navigation }: Props) {
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
     getMyProfile()
       .then((profile) => {
         setFullName(profile.full_name ?? '');
         setPhone(profile.phone ?? '');
+        setAddress(profile.address ?? '');
       })
       .catch((e) => Alert.alert(t('auth.errorTitle'), (e as Error).message))
       .finally(() => setLoading(false));
@@ -43,7 +45,7 @@ export default function ProfileScreen({ navigation }: Props) {
   const save = async () => {
     setSaving(true);
     try {
-      await updateMyProfile({ fullName, phone });
+      await updateMyProfile({ fullName, phone, address });
       Alert.alert(t('profile.savedTitle'), t('profile.savedBody'), [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -96,6 +98,15 @@ export default function ProfileScreen({ navigation }: Props) {
               autoComplete="tel"
               textContentType="telephoneNumber"
               icon="call-outline"
+            />
+            <FormInput
+              label={t('contact.address')}
+              value={address}
+              onChangeText={setAddress}
+              placeholder={t('contact.addressPlaceholder')}
+              autoComplete="street-address"
+              textContentType="fullStreetAddress"
+              icon="home-outline"
             />
             <View style={{ height: 8 }} />
             <PillButton

@@ -78,8 +78,22 @@ const el = {
   'summary.loginToConfirm': 'Σύνδεση για ολοκλήρωση',
 
   // Contact details
+  'area.checking': 'Έλεγχος τοποθεσίας…',
+  'area.outsideTitle': 'Εκτός περιοχής εξυπηρέτησης',
+  'area.outsideBody':
+    'Προς το παρόν δεχόμαστε κρατήσεις μόνο εντός Λευκωσίας. Ελπίζουμε σύντομα να σε εξυπηρετούμε και στην περιοχή σου!',
+  'area.deniedTitle': 'Χρειαζόμαστε την τοποθεσία σου',
+  'area.deniedBody':
+    'Για να κάνεις κράτηση, επίτρεψε την πρόσβαση στην τοποθεσία ώστε να επιβεβαιώσουμε ότι βρίσκεσαι στη Λευκωσία.',
+  'area.unavailableTitle': 'Δεν βρέθηκε η τοποθεσία',
+  'area.unavailableBody':
+    'Δεν μπορέσαμε να εντοπίσουμε τη θέση σου. Βεβαιώσου ότι το GPS είναι ενεργό και δοκίμασε ξανά.',
+  'area.retry': 'Δοκίμασε ξανά',
+  'area.openSettings': 'Άνοιγμα ρυθμίσεων',
   'contact.title': 'Τα στοιχεία σου',
   'contact.step': 'Βήμα 3 από 3 — συμπλήρωσε τα στοιχεία σου για την κράτηση.',
+  'contact.saveHint':
+    'Θα αποθηκευτούν στο προφίλ σου — στην επόμενη κράτηση δεν θα στα ξαναζητήσουμε.',
   'contact.email': 'Email',
   'contact.emailPlaceholder': 'name@example.com',
   'contact.emailError': 'Συμπλήρωσε ένα έγκυρο email',
@@ -288,8 +302,22 @@ const en: Record<TranslationKey, string> = {
   'summary.loginPrompt': 'Log in or create an account to confirm your booking.',
   'summary.loginToConfirm': 'Log in to confirm',
 
+  'area.checking': 'Checking your location…',
+  'area.outsideTitle': 'Outside our service area',
+  'area.outsideBody':
+    'For now we only accept bookings within Nicosia. We hope to serve your area soon!',
+  'area.deniedTitle': 'We need your location',
+  'area.deniedBody':
+    'To make a booking, allow location access so we can confirm you are in Nicosia.',
+  'area.unavailableTitle': "Couldn't find your location",
+  'area.unavailableBody':
+    "We couldn't detect your position. Make sure GPS is on and try again.",
+  'area.retry': 'Try again',
+  'area.openSettings': 'Open settings',
   'contact.title': 'Your details',
   'contact.step': 'Step 3 of 3 — fill in your details for the booking.',
+  'contact.saveHint':
+    "They'll be saved to your profile — we won't ask for them again on your next booking.",
   'contact.email': 'Email',
   'contact.emailPlaceholder': 'name@example.com',
   'contact.emailError': 'Enter a valid email',

@@ -27,6 +27,7 @@ export async function getMyProfile(): Promise<Profile> {
 export async function updateMyProfile(input: {
   fullName: string;
   phone: string;
+  address: string;
 }): Promise<void> {
   const {
     data: { user },
@@ -42,10 +43,36 @@ export async function updateMyProfile(input: {
     .update({
       full_name: input.fullName.trim() || null,
       phone: input.phone.trim() || null,
+      address: input.address.trim() || null,
     })
     .eq('id', user.id);
 
   if (error) {
     throw new Error(error.message);
   }
+}
+
+/**
+ * Persists the contact details entered during a booking so the next
+ * booking can skip the contact step entirely.
+ */
+export async function saveContactInfo(input: {
+  phone: string;
+  address: string;
+}): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return;
+  }
+
+  await supabase
+    .from('profiles')
+    .update({
+      phone: input.phone.trim() || null,
+      address: input.address.trim() || null,
+    })
+    .eq('id', user.id);
 }
