@@ -105,11 +105,13 @@ const el = {
 
   // Confirmation
   'confirm.paid': 'Η πληρωμή ολοκληρώθηκε!',
-  'confirm.onTheWay': 'Είμαστε στο δρόμο!',
-  'confirm.eta': 'Εκτιμώμενος χρόνος άφιξης',
-  'confirm.minutes': 'λεπτά',
+  'confirm.pendingTitle': 'Αναμένει έγκριση',
+  'confirm.pendingBody':
+    'Η ομάδα θα επιβεβαιώσει την επίσκεψη. Θα το δεις στο ιστορικό σου μόλις εγκριθεί — όχι αμέσως στο δρόμο.',
+  'confirm.when': 'Προγραμματισμένη επίσκεψη',
   'confirm.bookingLabel': 'Η κράτησή σου',
   'confirm.home': 'Πίσω στην αρχική',
+  'confirm.viewBookings': 'Οι κρατήσεις μου',
 
   // Membership plans (shown on Home for signed-in customers)
   'plans.title': 'Πακέτα Συνδρομής',
@@ -311,11 +313,13 @@ const en: Record<TranslationKey, string> = {
   'payment.simulate': 'Test payment (no charge)',
 
   'confirm.paid': 'Payment complete!',
-  'confirm.onTheWay': 'We are on our way!',
-  'confirm.eta': 'Estimated arrival time',
-  'confirm.minutes': 'minutes',
+  'confirm.pendingTitle': 'Waiting for approval',
+  'confirm.pendingBody':
+    'The team will confirm the visit. You’ll see the update in your bookings once it’s accepted — nobody is on the way yet.',
+  'confirm.when': 'Scheduled visit',
   'confirm.bookingLabel': 'Your booking',
   'confirm.home': 'Back to home',
+  'confirm.viewBookings': 'My bookings',
 
   'plans.title': 'Membership Plans',
   'plans.subtitle': 'Exclusive to our members — pick the plan that fits you.',

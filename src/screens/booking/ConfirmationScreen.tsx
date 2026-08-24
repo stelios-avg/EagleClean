@@ -9,9 +9,6 @@ import type { BookingStackParamList, RootStackParamList } from '../../navigation
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Confirmation'>;
 
-/** Phase 2: replace with the real ETA from dispatch / crew tracking. */
-const ETA_MINUTES = 10;
-
 export default function ConfirmationScreen({ navigation, route }: Props) {
   const { t, language } = useI18n();
   const { date, timeSlot, option, contact } = route.params;
@@ -35,6 +32,15 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
     { weekday: 'long', day: 'numeric', month: 'long' }
   );
 
+  const goHome = () =>
+    rootNavigation?.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+
+  const goToBookings = () =>
+    rootNavigation?.reset({
+      index: 1,
+      routes: [{ name: 'MainTabs' }, { name: 'MyBookings' }],
+    });
+
   return (
     <View style={styles.root}>
       <View style={styles.center}>
@@ -43,34 +49,28 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
         </Animated.View>
         <Text style={styles.paidTitle}>{t('confirm.paid')}</Text>
 
-        <View style={styles.etaCard}>
-          <View style={styles.etaIconCircle}>
-            <Ionicons name="car-sport" size={26} color={colors.textOnDark} />
+        <View style={styles.statusCard}>
+          <View style={styles.statusIconCircle}>
+            <Ionicons name="hourglass-outline" size={26} color={colors.textOnDark} />
           </View>
-          <Text style={styles.onTheWay}>{t('confirm.onTheWay')}</Text>
-          <Text style={styles.etaLabel}>{t('confirm.eta')}</Text>
-          <Text style={styles.etaValue}>
-            {ETA_MINUTES} {t('confirm.minutes')}
-          </Text>
+          <Text style={styles.statusTitle}>{t('confirm.pendingTitle')}</Text>
+          <Text style={styles.statusBody}>{t('confirm.pendingBody')}</Text>
         </View>
 
         <View style={styles.bookingCard}>
-          <Text style={styles.bookingLabel}>{t('confirm.bookingLabel')}</Text>
+          <Text style={styles.bookingLabel}>{t('confirm.when')}</Text>
           <Text style={styles.bookingLine}>
-            {t(`service.${option}`)} · {prettyDate} · {timeSlot}
+            {prettyDate} · {timeSlot}
           </Text>
-          <Text style={styles.bookingMeta}>{contact.address}</Text>
+          <Text style={styles.bookingMeta}>
+            {t(`service.${option}`)} · {contact.address}
+          </Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <PillButton
-          label={t('confirm.home')}
-          variant="dark"
-          onPress={() =>
-            rootNavigation?.reset({ index: 0, routes: [{ name: 'MainTabs' }] })
-          }
-        />
+        <PillButton label={t('confirm.viewBookings')} onPress={goToBookings} />
+        <PillButton label={t('confirm.home')} variant="outline" onPress={goHome} />
       </View>
     </View>
   );
@@ -103,15 +103,15 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'center',
   },
-  etaCard: {
+  statusCard: {
     alignSelf: 'stretch',
     backgroundColor: colors.accent,
     borderRadius: radii.card,
     padding: 26,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  etaIconCircle: {
+  statusIconCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
@@ -120,21 +120,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
   },
-  onTheWay: {
+  statusTitle: {
     fontSize: 22,
     fontFamily: fonts.extraBold,
     color: colors.textOnDark,
+    textAlign: 'center',
   },
-  etaLabel: {
+  statusBody: {
     fontSize: 14,
     fontFamily: fonts.medium,
     color: colors.textOnDarkMuted,
-  },
-  etaValue: {
-    fontSize: 30,
-    fontFamily: fonts.extraBold,
-    color: colors.textOnDark,
-    letterSpacing: -0.5,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bookingCard: {
     alignSelf: 'stretch',
@@ -149,9 +146,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   bookingLine: {
-    fontSize: 15,
-    fontFamily: fonts.bold,
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
+    textTransform: 'capitalize',
   },
   bookingMeta: {
     fontSize: 14,
@@ -160,5 +158,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingBottom: 10,
+    gap: 10,
   },
 });
