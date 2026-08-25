@@ -1,31 +1,59 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { Heading, ImageCard, Subtitle } from '../../components/ui';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import { Heading, Subtitle } from '../../components/ui';
+import { SHOP_CATEGORIES } from '../../constants/shop';
+import { formatEuros } from '../../constants/payments';
+import { useCart } from '../../context/CartContext';
 import { useI18n } from '../../i18n/LanguageContext';
-import { colors, spacing } from '../../theme';
+import { colors, fonts, radii, spacing } from '../../theme';
+import type { RootStackParamList } from '../../navigation/types';
 
 export default function MarketplaceScreen() {
   const { t } = useI18n();
+  const { count, totalCents } = useCart();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Heading>{t('marketplace.title')}</Heading>
-      <Subtitle>{t('marketplace.subtitle')}</Subtitle>
-      <ImageCard
-        image={require('../../../assets/images/marketplace-products.png')}
-        title={t('marketplace.products')}
-        linkLabel={t('marketplace.soon')}
-        height={300}
-        onPress={() => {}}
-      />
-      <ImageCard
-        image={require('../../../assets/images/marketplace-equipment.png')}
-        title={t('marketplace.equipment')}
-        linkLabel={t('marketplace.soon')}
-        height={300}
-        imageAlign="bottom"
-        onPress={() => {}}
-      />
-    </ScrollView>
+    <View style={styles.root}>
+      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+        <Heading>{t('shop.title')}</Heading>
+        <Subtitle>{t('shop.subtitle')}</Subtitle>
+
+        <View style={styles.grid}>
+          {SHOP_CATEGORIES.map((cat) => (
+            <Pressable
+              key={cat.slug}
+              onPress={() => navigation.navigate('ShopCategory', { category: cat.slug })}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
+              <View style={styles.cardIcon}>
+                <Ionicons name={cat.icon} size={24} color={colors.accent} />
+              </View>
+              <Text style={styles.cardLabel} numberOfLines={2}>
+                {t(`shopCat.${cat.slug}`)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+
+      {count > 0 ? (
+        <Pressable
+          onPress={() => navigation.navigate('ShopCart')}
+          style={({ pressed }) => [styles.cartBar, pressed && { opacity: 0.9 }]}
+        >
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>{count}</Text>
+          </View>
+          <Text style={styles.cartBarLabel}>{t('shop.viewCart')}</Text>
+          <Text style={styles.cartBarTotal}>{formatEuros(totalCents)}</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -36,6 +64,78 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.screen,
-    gap: 14,
+    gap: 8,
+    paddingBottom: 100,
+  },
+  grid: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  card: {
+    width: '48%',
+    flexGrow: 1,
+    borderRadius: radii.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    padding: 16,
+    gap: 10,
+  },
+  cardPressed: {
+    backgroundColor: colors.surface,
+  },
+  cardIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardLabel: {
+    fontSize: 14,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+    lineHeight: 19,
+  },
+  cartBar: {
+    position: 'absolute',
+    left: spacing.screen,
+    right: spacing.screen,
+    bottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.accent,
+    borderRadius: radii.pill,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  cartBadge: {
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  cartBadgeText: {
+    color: colors.textOnDark,
+    fontSize: 13,
+    fontFamily: fonts.extraBold,
+  },
+  cartBarLabel: {
+    flex: 1,
+    color: colors.textOnDark,
+    fontSize: 15,
+    fontFamily: fonts.bold,
+  },
+  cartBarTotal: {
+    color: colors.textOnDark,
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
   },
 });

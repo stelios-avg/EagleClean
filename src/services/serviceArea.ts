@@ -36,12 +36,19 @@ export async function checkServiceArea(): Promise<ServiceAreaStatus> {
       return 'permission-denied';
     }
 
-    // Last known fix is instant; fall back to a fresh (slower) reading.
+    // Last known fix is instant. A fresh GPS read can hang indoors, so
+    // cap it at 8s and prefer a coarser (faster) accuracy.
+    const lastKnown = await Location.getLastKnownPositionAsync({
+      maxAge: 30 * 60 * 1000,
+    });
     const position =
-      (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 })) ??
-      (await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      }));
+      lastKnown ??
+      (await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Location request timed out')), 8000)
+        ),
+      ]));
 
     const km = distanceKm(position.coords, NICOSIA_CENTER);
     return km <= SERVICE_RADIUS_KM ? 'inside' : 'outside';

@@ -10,6 +10,13 @@ export type BookingStatus =
 
 export type ServiceCategory = 'my-home' | 'cleaning-crew';
 
+export type ProductOrderStatus =
+  | 'pending'
+  | 'accepted'
+  | 'completed'
+  | 'rejected'
+  | 'cancelled';
+
 export type Database = {
   public: {
     Tables: {
@@ -106,6 +113,117 @@ export type Database = {
         };
         Relationships: [];
       };
+      products: {
+        Row: {
+          id: string;
+          code: string;
+          category: string;
+          name_el: string;
+          name_en: string;
+          variant_label: string | null;
+          price_cents: number;
+          sort: number;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          category: string;
+          name_el: string;
+          name_en: string;
+          variant_label?: string | null;
+          price_cents: number;
+          sort?: number;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          category?: string;
+          name_el?: string;
+          name_en?: string;
+          variant_label?: string | null;
+          price_cents?: number;
+          sort?: number;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      product_orders: {
+        Row: {
+          id: string;
+          user_id: string;
+          contact_email: string;
+          contact_phone: string;
+          contact_address: string;
+          total_cents: number;
+          status: ProductOrderStatus;
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          contact_email: string;
+          contact_phone: string;
+          contact_address: string;
+          total_cents: number;
+          status?: ProductOrderStatus;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          contact_email?: string;
+          contact_phone?: string;
+          contact_address?: string;
+          total_cents?: number;
+          status?: ProductOrderStatus;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      product_order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          product_id: string | null;
+          name_el: string;
+          name_en: string;
+          variant_label: string | null;
+          unit_price_cents: number;
+          quantity: number;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          product_id?: string | null;
+          name_el: string;
+          name_en: string;
+          variant_label?: string | null;
+          unit_price_cents: number;
+          quantity: number;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          product_id?: string | null;
+          name_el?: string;
+          name_en?: string;
+          variant_label?: string | null;
+          unit_price_cents?: number;
+          quantity?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -122,3 +240,7 @@ export type Database = {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
 export type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+export type Product = Database['public']['Tables']['products']['Row'];
+export type ProductOrder = Database['public']['Tables']['product_orders']['Row'];
+export type ProductOrderItem =
+  Database['public']['Tables']['product_order_items']['Row'];

@@ -3,6 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import MyBookingsScreen from '../screens/account/MyBookingsScreen';
 import ProfileScreen from '../screens/account/ProfileScreen';
+import ShopCategoryScreen from '../screens/shop/ShopCategoryScreen';
+import CartScreen from '../screens/shop/CartScreen';
+import CheckoutScreen from '../screens/shop/CheckoutScreen';
 import MainTabNavigator from './MainTabNavigator';
 import BookingNavigator from './BookingNavigator';
 import AuthNavigator from './AuthNavigator';
@@ -41,6 +44,9 @@ export default function RootNavigator() {
       />
       <Stack.Screen name="MyBookings" component={MyBookingsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="ShopCategory" component={ShopCategoryScreen} />
+      <Stack.Screen name="ShopCart" component={CartScreen} />
+      <Stack.Screen name="ShopCheckout" component={CheckoutScreen} />
     </Stack.Navigator>
   );
 }

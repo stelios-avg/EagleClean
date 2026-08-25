@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { ShopCategorySlug } from '../constants/shop';
 
 // ---------- Domain types used by the booking flow ----------
 
@@ -66,6 +67,9 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList> | undefined;
   MyBookings: undefined;
   Profile: undefined;
+  ShopCategory: { category: ShopCategorySlug };
+  ShopCart: undefined;
+  ShopCheckout: undefined;
 };
 
 // Makes useNavigation() fully typed everywhere without extra annotations.
