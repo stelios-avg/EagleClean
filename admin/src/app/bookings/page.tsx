@@ -1,28 +1,16 @@
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
+import { StatusBadge } from '@/components/status-badge';
 import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import type { BookingStatus } from '@/lib/types';
+import type { Booking, BookingStatus, ServiceCategory } from '@/lib/types';
 import { logout } from '../login/actions';
 import { BookingRowActions } from './booking-row-actions';
 import { LiveRefresh } from './live-refresh';
 
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  pending: 'Εκκρεμεί',
-  paid: 'Πληρωμένη',
-  accepted: 'Εγκεκριμένη',
-  rejected: 'Απορρίφθηκε',
-  completed: 'Ολοκληρώθηκε',
-  cancelled: 'Ακυρώθηκε',
-};
-
-const STATUS_STYLE: Record<BookingStatus, string> = {
-  pending: 'bg-amber-100 text-amber-900',
-  paid: 'bg-blue-100 text-blue-800',
-  accepted: 'bg-emerald-100 text-emerald-900',
-  rejected: 'bg-red-100 text-red-800',
-  completed: 'bg-zinc-100 text-zinc-700',
-  cancelled: 'bg-zinc-100 text-zinc-500',
+const CATEGORY_LABEL: Record<ServiceCategory, string> = {
+  'my-home': 'Σπίτι',
+  'cleaning-crew': 'Συνεργείο',
 };
 
 function euros(cents: number) {
@@ -38,6 +26,26 @@ function formatDate(isoDate: string) {
   });
 }
 
+function timeAgo(iso: string) {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (minutes < 1) return 'μόλις τώρα';
+  if (minutes < 60) return `πριν ${minutes} λεπτά`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `πριν ${hours} ώρες`;
+  const days = Math.floor(hours / 24);
+  return `πριν ${days} ημέρες`;
+}
+
+function matchesQuery(booking: Booking, q: string) {
+  return (
+    (booking.contact_name ?? '').toLowerCase().includes(q) ||
+    (booking.contact_email ?? '').toLowerCase().includes(q) ||
+    booking.contact_phone.toLowerCase().includes(q) ||
+    booking.contact_address.toLowerCase().includes(q) ||
+    booking.option.toLowerCase().includes(q)
+  );
+}
+
 export default async function BookingsPage({
   searchParams,
 }: {
@@ -45,7 +53,13 @@ export default async function BookingsPage({
 }) {
   const profile = await requireAdmin();
   const params = await searchParams;
-  const statusFilter = params.status as BookingStatus | undefined;
+  const statusParam = params.status ?? '';
+  const isAwaiting = statusParam === 'awaiting';
+  const statusFilter = (
+    ['pending', 'paid', 'accepted', 'rejected', 'completed', 'cancelled'] as BookingStatus[]
+  ).includes(statusParam as BookingStatus)
+    ? (statusParam as BookingStatus)
+    : undefined;
   const q = (params.q ?? '').trim().toLowerCase();
 
   const supabase = await createClient();
@@ -64,56 +78,66 @@ export default async function BookingsPage({
     {} as Partial<Record<BookingStatus, number>>
   );
 
-  const filtered = all.filter((b) => {
-    if (statusFilter && b.status !== statusFilter) return false;
-    if (!q) return true;
-    return (
-      b.contact_email.toLowerCase().includes(q) ||
-      b.contact_phone.toLowerCase().includes(q) ||
-      b.contact_address.toLowerCase().includes(q) ||
-      b.option.toLowerCase().includes(q)
-    );
-  });
-
   const awaiting = (counts.paid ?? 0) + (counts.pending ?? 0);
 
+  const filtered = all.filter((b) => {
+    if (isAwaiting && b.status !== 'paid' && b.status !== 'pending') return false;
+    if (statusFilter && b.status !== statusFilter) return false;
+    if (!q) return true;
+    return matchesQuery(b, q);
+  });
+
+  const searchWith = (status?: string) => {
+    const next = new URLSearchParams();
+    if (status) next.set('status', status);
+    if (params.q) next.set('q', params.q);
+    const qs = next.toString();
+    return qs ? `/bookings?${qs}` : '/bookings';
+  };
+
   const filters: Array<{ key: string; label: string; href: string; count: number }> = [
-    { key: 'all', label: 'Όλες', href: '/bookings', count: all.length },
+    { key: 'all', label: 'Όλες', href: searchWith(), count: all.length },
     {
-      key: 'paid',
-      label: 'Πληρωμένες',
-      href: '/bookings?status=paid',
-      count: counts.paid ?? 0,
+      key: 'awaiting',
+      label: 'Προς έγκριση',
+      href: searchWith('awaiting'),
+      count: awaiting,
     },
     {
       key: 'accepted',
       label: 'Εγκεκριμένες',
-      href: '/bookings?status=accepted',
+      href: searchWith('accepted'),
       count: counts.accepted ?? 0,
+    },
+    {
+      key: 'completed',
+      label: 'Ολοκληρωμένες',
+      href: searchWith('completed'),
+      count: counts.completed ?? 0,
     },
     {
       key: 'rejected',
       label: 'Απορρίψεις',
-      href: '/bookings?status=rejected',
+      href: searchWith('rejected'),
       count: counts.rejected ?? 0,
     },
   ];
 
   return (
-    <main className="min-h-full bg-[radial-gradient(ellipse_at_top,_#e8eeff_0%,_#f4f6fb_42%,_#f4f6fb_100%)]">
-      <header className="border-b border-white/10 bg-ink text-white shadow-[0_12px_40px_rgba(11,12,16,0.22)]">
+    <main className="min-h-full bg-[radial-gradient(ellipse_at_top,_#d4f4f4_0%,_#f7fcfc_42%,_#f7fcfc_100%)]">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-ink text-white shadow-[0_12px_40px_rgba(14,20,20,0.28)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-4">
             <div className="rounded-2xl bg-white px-3 py-2 shadow-sm">
               <BrandLogo height={42} priority />
             </div>
             <div>
-              <p className="text-[11px] font-bold tracking-[0.16em] text-blue-300">
+              <p className="text-[11px] font-bold tracking-[0.16em] text-accent">
                 ADMIN PANEL
               </p>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-extrabold tracking-tight">Κρατήσεις</h1>
-                <LiveRefresh />
+                <LiveRefresh onDark />
               </div>
             </div>
           </div>
@@ -124,7 +148,7 @@ export default async function BookingsPage({
             <form action={logout}>
               <button
                 type="submit"
-                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-ink transition hover:bg-blue-50"
+                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-ink transition hover:bg-accent-soft active:scale-[0.98]"
               >
                 Αποσύνδεση
               </button>
@@ -135,59 +159,72 @@ export default async function BookingsPage({
 
       <div className="animate-fade-up mx-auto max-w-6xl px-6 py-7">
         <div className="mb-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[22px] bg-white p-5 shadow-[0_10px_30px_rgba(16,18,24,0.05)] ring-1 ring-black/5">
+          <Link
+            href={searchWith()}
+            className="rounded-[22px] bg-white p-5 shadow-[0_10px_30px_rgba(16,22,22,0.05)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(16,22,22,0.08)]"
+          >
             <p className="text-xs font-bold tracking-wide text-zinc-500">ΣΥΝΟΛΟ</p>
-            <p className="mt-1 text-3xl font-extrabold tracking-tight text-zinc-900">
+            <p className="mt-1 text-3xl font-extrabold tracking-tight text-ink">
               {all.length}
             </p>
-          </div>
-          <div className="rounded-[22px] bg-blue-600 p-5 text-white shadow-[0_12px_30px_rgba(41,70,245,0.28)]">
-            <p className="text-xs font-bold tracking-wide text-white/75">ΠΡΟΣ ΕΓΚΡΙΣΗ</p>
+          </Link>
+          <Link
+            href={searchWith('awaiting')}
+            className="rounded-[22px] bg-gradient-to-br from-[#5EE0E0] to-[#1A8F8F] p-5 text-[#072424] shadow-[0_12px_30px_rgba(48,204,204,0.32)] transition hover:-translate-y-0.5 hover:brightness-105"
+          >
+            <p className="text-xs font-bold tracking-wide text-[#072424]/70">
+              ΠΡΟΣ ΕΓΚΡΙΣΗ
+            </p>
             <p className="mt-1 text-3xl font-extrabold tracking-tight">{awaiting}</p>
-          </div>
-          <div className="rounded-[22px] bg-white p-5 shadow-[0_10px_30px_rgba(16,18,24,0.05)] ring-1 ring-black/5">
+          </Link>
+          <Link
+            href={searchWith('accepted')}
+            className="rounded-[22px] bg-white p-5 shadow-[0_10px_30px_rgba(16,22,22,0.05)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(16,22,22,0.08)]"
+          >
             <p className="text-xs font-bold tracking-wide text-zinc-500">ΕΓΚΕΚΡΙΜΕΝΕΣ</p>
-            <p className="mt-1 text-3xl font-extrabold tracking-tight text-zinc-900">
+            <p className="mt-1 text-3xl font-extrabold tracking-tight text-ink">
               {counts.accepted ?? 0}
             </p>
-          </div>
+          </Link>
         </div>
 
         <form method="get" className="mb-4">
           <div className="relative">
             <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
-              ⌕
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M20 20L16.5 16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </span>
             <input
               name="q"
               defaultValue={params.q ?? ''}
-              placeholder="Αναζήτηση email, τηλέφωνο, διεύθυνση, υπηρεσία…"
-              className="w-full rounded-2xl border border-zinc-200 bg-white py-3.5 pl-11 pr-4 text-sm shadow-sm outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/15"
+              placeholder="Αναζήτηση ονόματος, email, τηλεφώνου, διεύθυνσης…"
+              className="w-full rounded-2xl border border-zinc-200 bg-white py-3.5 pl-11 pr-4 text-sm shadow-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/20"
             />
           </div>
-          {statusFilter ? (
-            <input type="hidden" name="status" value={statusFilter} />
-          ) : null}
+          {statusParam ? <input type="hidden" name="status" value={statusParam} /> : null}
         </form>
 
         <div className="mb-5 flex flex-wrap gap-2">
           {filters.map((f) => {
             const active =
-              (f.key === 'all' && !statusFilter) || f.key === statusFilter;
+              (f.key === 'all' && !statusFilter && !isAwaiting) ||
+              f.key === statusParam;
             return (
               <Link
                 key={f.key}
                 href={f.href}
-                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition ${
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition active:scale-[0.98] ${
                   active
-                    ? 'bg-blue-600 text-white shadow-[0_8px_18px_rgba(41,70,245,0.28)]'
-                    : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-50'
+                    ? 'bg-ink text-white shadow-[0_8px_18px_rgba(14,20,20,0.22)]'
+                    : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-accent-soft'
                 }`}
               >
                 {f.label}
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    active ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-600'
+                    active ? 'bg-white/15 text-white' : 'bg-zinc-100 text-zinc-600'
                   }`}
                 >
                   {f.count}
@@ -203,82 +240,96 @@ export default async function BookingsPage({
           </p>
         ) : filtered.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-zinc-300 bg-white/80 px-6 py-20 text-center backdrop-blur">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft">
               <BrandLogo height={36} />
             </div>
-            <p className="text-lg font-extrabold text-zinc-900">Δεν υπάρχουν κρατήσεις</p>
+            <p className="text-lg font-extrabold text-ink">
+              {all.length === 0 ? 'Δεν υπάρχουν κρατήσεις' : 'Δεν βρέθηκαν αποτελέσματα'}
+            </p>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-zinc-500">
-              Όταν ένας πελάτης ολοκληρώσει κράτηση από το app, θα εμφανιστεί εδώ για
-              αποδοχή ή απόρριψη.
+              {all.length === 0
+                ? 'Όταν ένας πελάτης ολοκληρώσει κράτηση από το app, θα εμφανιστεί εδώ για αποδοχή ή απόρριψη.'
+                : 'Δοκίμασε άλλο φίλτρο ή καθάρισε την αναζήτηση.'}
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_14px_40px_rgba(16,18,24,0.06)] ring-1 ring-black/5">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-zinc-50/90 text-[11px] uppercase tracking-[0.08em] text-zinc-500">
-                  <tr>
-                    <th className="px-5 py-3.5 font-bold">Πελάτης</th>
-                    <th className="px-5 py-3.5 font-bold">Υπηρεσία</th>
-                    <th className="px-5 py-3.5 font-bold">Ημέρα / Ώρα</th>
-                    <th className="px-5 py-3.5 font-bold">Ποσό</th>
-                    <th className="px-5 py-3.5 font-bold">Κατάσταση</th>
-                    <th className="px-5 py-3.5 font-bold">Ενέργειες</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
-                  {filtered.map((b) => (
-                    <tr
-                      key={b.id}
-                      className="align-top transition hover:bg-blue-50/40"
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-bold text-zinc-900">{b.contact_email}</p>
-                        <p className="mt-0.5 text-zinc-600">{b.contact_phone}</p>
-                        <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-zinc-500">
-                          {b.contact_address}
-                        </p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-zinc-900">{b.option}</p>
-                        <p className="text-xs text-zinc-500">{b.category}</p>
-                        {(b.square_meters || b.extra_hours > 0) && (
-                          <p className="mt-1 text-xs font-semibold text-blue-700">
-                            {b.square_meters ? `${b.square_meters} m²` : ''}
-                            {b.square_meters && b.extra_hours > 0 ? ' · ' : ''}
-                            {b.extra_hours > 0 ? `+${b.extra_hours} ώρες` : ''}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-zinc-900">
-                          {formatDate(b.service_date)}
-                        </p>
-                        <p className="text-zinc-600">{b.time_slot}</p>
-                      </td>
-                      <td className="px-5 py-4 text-base font-extrabold text-zinc-900">
-                        {euros(b.amount_cents)}
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLE[b.status]}`}
-                        >
-                          {STATUS_LABEL[b.status]}
+          <ul className="flex flex-col gap-3">
+            {filtered.map((b) => (
+              <li
+                key={b.id}
+                className="rounded-[24px] bg-white p-5 shadow-[0_10px_30px_rgba(16,22,22,0.05)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(16,22,22,0.08)]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={b.status} />
+                      {b.user_id ? null : (
+                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold text-zinc-600">
+                          Επισκέπτης
                         </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <BookingRowActions
-                          bookingId={b.id}
-                          status={b.status}
-                          notes={b.admin_notes}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      )}
+                      <span className="text-[11px] font-medium text-zinc-400">
+                        {timeAgo(b.created_at)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-lg font-extrabold tracking-tight text-ink">
+                      {b.contact_name || b.contact_email || '—'}
+                    </p>
+                    <div className="mt-1 flex flex-col gap-0.5 text-sm text-zinc-600">
+                      <a className="w-fit hover:text-accent-dark" href={`tel:${b.contact_phone}`}>
+                        {b.contact_phone}
+                      </a>
+                      {b.contact_email ? (
+                        <a
+                          className="w-fit hover:text-accent-dark"
+                          href={`mailto:${b.contact_email}`}
+                        >
+                          {b.contact_email}
+                        </a>
+                      ) : null}
+                      <p className="max-w-xl text-xs leading-relaxed text-zinc-500">
+                        {b.contact_address}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-extrabold tracking-tight text-ink">
+                    {euros(b.amount_cents)}
+                  </p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-bold text-accent-dark">
+                    {b.option}
+                  </span>
+                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+                    {CATEGORY_LABEL[b.category]}
+                  </span>
+                  {b.square_meters ? (
+                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+                      {b.square_meters} m²
+                    </span>
+                  ) : null}
+                  {b.extra_hours > 0 ? (
+                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+                      +{b.extra_hours} ώρες
+                    </span>
+                  ) : null}
+                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+                    {formatDate(b.service_date)} · {b.time_slot}
+                  </span>
+                </div>
+
+                <div className="mt-4 border-t border-zinc-100 pt-4">
+                  <BookingRowActions
+                    key={`${b.id}-${b.status}`}
+                    bookingId={b.id}
+                    status={b.status}
+                    notes={b.admin_notes}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </main>

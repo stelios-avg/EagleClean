@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Alert,
   ImageBackground,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo, LanguageToggle, PillButton } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
@@ -71,10 +71,7 @@ function MenuRow({
   danger?: boolean;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.menuRow, pressed && { backgroundColor: colors.surface }]}
-    >
+    <PressableScale onPress={onPress} style={styles.menuRow}>
       <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
         <Ionicons
           name={icon}
@@ -91,7 +88,7 @@ function MenuRow({
         size={18}
         color={danger ? '#E5484D' : colors.textSecondary}
       />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -166,7 +163,7 @@ export default function AccountScreen({ navigation }: Props) {
     >
       <View style={[styles.profileCard, { marginTop: insets.top + 8 }]}>
         <LinearGradient
-          colors={[colors.ink, '#1A2A8A']}
+          colors={[colors.ink, colors.accentDeep]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}

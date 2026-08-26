@@ -41,12 +41,13 @@ export type Database = {
       bookings: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           service_date: string;
           time_slot: string;
           category: ServiceCategory;
           option: string;
-          contact_email: string;
+          contact_name: string | null;
+          contact_email: string | null;
           contact_phone: string;
           contact_address: string;
           square_meters: number | null;

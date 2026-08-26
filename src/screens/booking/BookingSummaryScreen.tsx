@@ -35,26 +35,30 @@ function SummaryRow({
 }
 
 /**
- * End of the guest booking flow — this is where the Guest -> Authenticated
- * handoff happens. Guests get "Log in to confirm", which opens the Auth
- * modal on top; the selection here stays intact underneath. Authenticated
- * users continue to the mandatory Contact Details step, then Payment.
+ * Review the quote, then continue to contact details. Guests can finish
+ * without an account; signed-in customers skip contact if the profile is complete.
  */
 export default function BookingSummaryScreen({ navigation, route }: Props) {
   const { isAuthenticated, session } = useAuth();
   const { t, locale } = useI18n();
   const [checking, setChecking] = useState(false);
-  const { date, timeSlot, category, option, squareMeters, extraHours } = route.params;
-  const amount = bookingTotalCents(option, extraHours);
+  const { date, timeSlot, category, option, rooms, squareMeters, extraHours } =
+    route.params;
+  const amount = bookingTotalCents(option, extraHours, squareMeters, rooms);
 
-  // Returning customers with a complete profile (email, phone, address)
+  // Returning customers with a complete profile (name, phone, address)
   // skip the contact-details step and go straight to payment.
   const continueBooking = async () => {
+    if (!isAuthenticated) {
+      navigation.navigate('ContactDetails', route.params);
+      return;
+    }
     setChecking(true);
     let contact: ReturnType<typeof completeContactFrom> = null;
     try {
       const profile = await getMyProfile();
       contact = completeContactFrom(
+        profile.full_name,
         profile.email ?? session?.email,
         profile.phone,
         profile.address
@@ -94,7 +98,16 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
           <SummaryRow
             icon="options-outline"
             label={t('summary.option')}
-            value={t(`service.${option}`)}
+            value={t(`service.${option}`).replace(/\n/g, '')}
+          />
+          <SummaryRow
+            icon="bed-outline"
+            label={t('summary.rooms')}
+            value={
+              rooms === 0
+                ? t('service.Studio').replace(/\n/g, '')
+                : String(rooms)
+            }
           />
           <SummaryRow icon="calendar-outline" label={t('summary.day')} value={prettyDate} />
           <SummaryRow
@@ -123,21 +136,18 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.footer}>
-        {isAuthenticated ? (
+        <PillButton
+          label={checking ? t('auth.pleaseWait') : t('summary.continue')}
+          onPress={continueBooking}
+          disabled={checking}
+        />
+        {!isAuthenticated ? (
           <PillButton
-            label={checking ? t('auth.pleaseWait') : t('summary.continue')}
-            onPress={continueBooking}
-            disabled={checking}
+            label={t('summary.orLogin')}
+            variant="outline"
+            onPress={() => rootNavigation?.navigate('Auth')}
           />
-        ) : (
-          <>
-            <Subtitle>{t('summary.loginPrompt')}</Subtitle>
-            <PillButton
-              label={t('summary.loginToConfirm')}
-              onPress={() => rootNavigation?.navigate('Auth')}
-            />
-          </>
-        )}
+        ) : null}
       </View>
     </View>
   );

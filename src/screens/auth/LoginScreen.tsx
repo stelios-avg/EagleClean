@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { FormInput, PillButton } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts } from '../../theme';
@@ -41,17 +42,16 @@ export default function LoginScreen({ navigation }: Props) {
       subtitle={t('auth.loginSubtitle')}
       onClose={closeModal}
       footer={
-        <Pressable
+        <PressableScale
           onPress={() => navigation.navigate('SignUp')}
           disabled={busy}
           hitSlop={8}
-          style={({ pressed }) => pressed && { opacity: 0.7 }}
         >
           <Text style={styles.footerText}>
             {t('auth.noAccountPrefix')}{' '}
             <Text style={styles.footerLink}>{t('auth.noAccountAction')}</Text>
           </Text>
-        </Pressable>
+        </PressableScale>
       }
     >
       <FormInput

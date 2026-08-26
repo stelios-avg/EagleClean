@@ -3,7 +3,6 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo, LanguageToggle } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { colors, fonts, radii, spacing } from '../../theme';
 
 /**
@@ -55,15 +55,14 @@ export default function AuthShell({
             style={StyleSheet.absoluteFill}
           />
           <View style={[styles.heroTop, { paddingTop: insets.top + 8 }]}>
-            <Pressable
+            <PressableScale
               onPress={onClose}
               hitSlop={12}
-              style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.75 }]}
-              accessibilityRole="button"
+              style={styles.closeBtn}
               accessibilityLabel="Close"
             >
               <Ionicons name="close" size={22} color={colors.textOnDark} />
-            </Pressable>
+            </PressableScale>
             <LanguageToggle onDark />
           </View>
           <View style={styles.heroBrand}>

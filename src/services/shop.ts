@@ -29,7 +29,7 @@ export type OrderItemInput = {
 /** Creates the order plus its line items for the signed-in user. */
 export async function createProductOrder(
   items: OrderItemInput[],
-  contact: ContactDetails
+  contact: Pick<ContactDetails, 'email' | 'phone' | 'address'>
 ): Promise<ProductOrder> {
   const {
     data: { user },

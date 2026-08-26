@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PillButton } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
@@ -11,6 +12,7 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'Confirmation'>;
 
 export default function ConfirmationScreen({ navigation, route }: Props) {
   const { t, language } = useI18n();
+  const { isAuthenticated } = useAuth();
   const { date, timeSlot, option, contact } = route.params;
 
   const scale = useRef(new Animated.Value(0.4)).current;
@@ -51,7 +53,7 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
 
         <View style={styles.statusCard}>
           <View style={styles.statusIconCircle}>
-            <Ionicons name="hourglass-outline" size={26} color={colors.textOnDark} />
+            <Ionicons name="hourglass-outline" size={26} color={colors.textOnAccent} />
           </View>
           <Text style={styles.statusTitle}>{t('confirm.pendingTitle')}</Text>
           <Text style={styles.statusBody}>{t('confirm.pendingBody')}</Text>
@@ -63,14 +65,20 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
             {prettyDate} · {timeSlot}
           </Text>
           <Text style={styles.bookingMeta}>
-            {t(`service.${option}`)} · {contact.address}
+            {contact.name} · {t(`service.${option}`)} · {contact.address}
           </Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <PillButton label={t('confirm.viewBookings')} onPress={goToBookings} />
-        <PillButton label={t('confirm.home')} variant="outline" onPress={goHome} />
+        {isAuthenticated ? (
+          <PillButton label={t('confirm.viewBookings')} onPress={goToBookings} />
+        ) : null}
+        <PillButton
+          label={t('confirm.home')}
+          variant={isAuthenticated ? 'outline' : 'accent'}
+          onPress={goHome}
+        />
       </View>
     </View>
   );
@@ -115,7 +123,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(26,22,8,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -123,13 +131,13 @@ const styles = StyleSheet.create({
   statusTitle: {
     fontSize: 22,
     fontFamily: fonts.extraBold,
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     textAlign: 'center',
   },
   statusBody: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.textOnDarkMuted,
+    color: colors.inkSoft,
     textAlign: 'center',
     lineHeight: 20,
   },

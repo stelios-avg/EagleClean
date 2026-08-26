@@ -1,9 +1,7 @@
 import React from 'react';
-import { Pressable } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import QuoteScreen from '../screens/booking/QuoteScreen';
 import CalendarScreen from '../screens/booking/CalendarScreen';
-import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 import BookingSummaryScreen from '../screens/booking/BookingSummaryScreen';
 import ContactDetailsScreen from '../screens/booking/ContactDetailsScreen';
 import PaymentScreen from '../screens/booking/PaymentScreen';
@@ -15,16 +13,17 @@ import type { BookingStackParamList } from './types';
 const Stack = createNativeStackNavigator<BookingStackParamList>();
 
 /**
- * Sequential booking flow: Calendar -> Time Slots -> Service Selection
- * -> Summary -> Contact Details (mandatory) -> Payment. Selections
- * accumulate in route params. Auth is enforced at the Summary step.
+ * Sequential booking flow: Quote (rooms + sqm) -> Calendar -> Summary
+ * -> Contact Details (mandatory) -> Payment. Selections accumulate in
+ * route params. Auth is enforced at the Summary step.
  */
 export default function BookingNavigator() {
   const { t } = useI18n();
   return (
     <Stack.Navigator
+      initialRouteName="Quote"
       screenOptions={{
-        headerStyle: { backgroundColor: colors.accent },
+        headerStyle: { backgroundColor: colors.ink },
         headerTintColor: colors.textOnDark,
         headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
         headerShadowVisible: false,
@@ -34,28 +33,14 @@ export default function BookingNavigator() {
       }}
     >
       <Stack.Screen
-        name="Calendar"
-        component={CalendarScreen}
-        options={({ navigation }) => ({
-          title: t('nav.selectDay'),
-          // Calendar is the first screen of this stack, so the native back
-          // arrow never shows — add one that dismisses the whole flow.
-          headerLeft: () => (
-            <Pressable
-              onPress={() => navigation.getParent()?.goBack()}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Back"
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.textOnDark} />
-            </Pressable>
-          ),
-        })}
+        name="Quote"
+        component={QuoteScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="ServiceSelection"
-        component={ServiceSelectionScreen}
-        options={{ title: t('nav.selectService') }}
+        name="Calendar"
+        component={CalendarScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="BookingSummary"

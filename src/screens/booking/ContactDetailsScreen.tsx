@@ -19,28 +19,32 @@ import type { BookingStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<BookingStackParamList, 'ContactDetails'>;
 
 /**
- * Shown only when the signed-in customer's profile is missing contact
- * details (first booking, usually). Fields are prefilled from the
- * profile, and whatever the customer enters is saved back so the next
- * booking skips this step entirely.
+ * Collects name, phone, and address before payment. Guests can continue
+ * without an account. Signed-in customers get fields prefilled from the
+ * profile and saved back so the next booking can skip this step.
  */
 export default function ContactDetailsScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const { session } = useAuth();
+  const { isAuthenticated, session } = useAuth();
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isAuthenticated);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
     let active = true;
     getMyProfile()
       .then((profile) => {
         if (!active) {
           return;
         }
+        setName(profile.full_name ?? '');
         setEmail(profile.email ?? session?.email ?? '');
         setPhone(profile.phone ?? '');
         setAddress(profile.address ?? '');
@@ -59,24 +63,26 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAuthenticated]);
 
-  const emailValid = EMAIL_RE.test(email.trim());
+  const nameValid = name.trim().length >= 2;
+  const emailTrimmed = email.trim();
+  const emailValid = emailTrimmed.length === 0 || EMAIL_RE.test(emailTrimmed);
   const phoneValid = PHONE_RE.test(phone.trim());
   const addressValid = address.trim().length >= 5;
-  const allValid = emailValid && phoneValid && addressValid;
+  const allValid = nameValid && emailValid && phoneValid && addressValid;
 
   const submit = () => {
     setTouched(true);
     if (!allValid) {
       return;
     }
-    // Persist for future bookings; a failure here shouldn't block payment.
-    void saveContactInfo({ phone, address }).catch(() => {});
+    void saveContactInfo({ fullName: name, phone, address }).catch(() => {});
     navigation.navigate('Payment', {
       ...route.params,
       contact: {
-        email: email.trim(),
+        name: name.trim(),
+        email: emailTrimmed,
         phone: phone.trim(),
         address: address.trim(),
       },
@@ -98,16 +104,18 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Heading>{t('contact.title')}</Heading>
-        <Subtitle>{t('contact.saveHint')}</Subtitle>
+        <Subtitle>
+          {isAuthenticated ? t('contact.saveHint') : t('contact.guestHint')}
+        </Subtitle>
 
         <View style={styles.form}>
           <FormInput
-            label={t('contact.email')}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={t('contact.emailPlaceholder')}
-            keyboardType="email-address"
-            error={touched && !emailValid ? t('contact.emailError') : undefined}
+            label={t('contact.name')}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('contact.namePlaceholder')}
+            autoCapitalize="words"
+            error={touched && !nameValid ? t('contact.nameError') : undefined}
           />
           <FormInput
             label={t('contact.phone')}
@@ -123,6 +131,14 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
             onChangeText={setAddress}
             placeholder={t('contact.addressPlaceholder')}
             error={touched && !addressValid ? t('contact.addressError') : undefined}
+          />
+          <FormInput
+            label={t('contact.emailOptional')}
+            value={email}
+            onChangeText={setEmail}
+            placeholder={t('contact.emailPlaceholder')}
+            keyboardType="email-address"
+            error={touched && !emailValid ? t('contact.emailError') : undefined}
           />
         </View>
 

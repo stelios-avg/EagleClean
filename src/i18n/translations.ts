@@ -29,6 +29,7 @@ const el = {
   // Booking navigation titles (kept short so headers don't truncate on small phones)
   'nav.selectDay': 'Ημέρα & Ώρα',
   'nav.selectService': 'Υπηρεσία',
+  'nav.quote': 'Τιμή',
   'nav.summary': 'Σύνοψη',
   'nav.contact': 'Στοιχεία',
   'nav.payment': 'Πληρωμή',
@@ -37,10 +38,12 @@ const el = {
 
   // Calendar
   'calendar.title': 'Διάλεξε ημέρα & ώρα',
-  'calendar.step': 'Βήμα 1 από 3 — πότε να έρθουμε;',
+  'calendar.step': 'Βήμα 2 από 3 — πότε να έρθουμε;',
+  'calendar.pickDate': 'Διάλεξε ημέρα',
   'calendar.slotsFor': 'Διαθέσιμες ώρες',
   'calendar.pickDayHint': 'Πάτησε μια ημέρα στο ημερολόγιο για να δεις τις διαθέσιμες ώρες.',
   'calendar.extraHours': 'Έξτρα ώρες',
+  'calendar.noExtra': 'Χωρίς έξτρα',
   'calendar.sqm': 'Τετραγωνικά',
   'calendar.sqmHint': 'Μέγεθος χώρου — υποχρεωτικό',
   'calendar.sqmPlaceholder': 'π.χ. 85',
@@ -49,6 +52,44 @@ const el = {
   'calendar.noSlots': 'Δεν υπάρχουν διαθέσιμες ώρες για αυτή τη μέρα — διάλεξε άλλη.',
   'unit.hours': 'ώρες',
   'unit.hoursShort': 'ω',
+
+  // Indicative quote (rooms + sqm) before the calendar
+  'quote.title': 'Ενδεικτική τιμή',
+  'quote.step': 'Βήμα 1 από 3 — δωμάτια & τετραγωνικά',
+  'quote.pickService': 'Διάλεξε υπηρεσία',
+  'quote.pickServiceHint': 'Διάλεξε υπηρεσία για να δεις την τιμή.',
+  'quote.rooms': 'Δωμάτια',
+  'quote.roomsHint': 'Πόσα υπνοδωμάτια έχει ο χώρος;',
+  'quote.sqm': 'Τετραγωνικά',
+  'quote.sqmHint': 'Μέγεθος χώρου — υποχρεωτικό',
+  'quote.sqmCustom': 'Άλλο',
+  'quote.chipStudio': 'Στούντιο',
+  'quote.chipRooms': '{n} υπν.',
+  'quote.from': 'από {price}',
+  'quote.indicative': 'Ενδεικτικά',
+  'quote.indicativeHint': 'Η τελική τιμή μπορεί να αλλάξει αν προσθέσεις έξτρα ώρες στο ημερολόγιο.',
+  'quote.included': 'Περιλαμβάνονται',
+  'quote.includedSqm': '{n} m²',
+  'quote.overage': '+{price} έξτρα',
+  'quote.continue': 'Συνέχεια στο ημερολόγιο',
+  'quote.bookNow': 'Κράτηση τώρα',
+  'quote.description': 'Περιγραφή',
+  'quote.minDuration': 'Ελάχιστη διάρκεια',
+  'quote.hoursValue': '{n}:00 ώρες',
+  'quote.providerTitle': 'Πάροχος καθαρισμού',
+  'quote.providerName': 'EagleClean',
+  'quote.desc.Studio':
+    'Καθαρισμός στούντιο — ενδεικτική τιμή ανάλογα με τα τετραγωνικά του χώρου.',
+  'quote.desc.1 Bedroom':
+    'Καθαρισμός διαμερίσματος 1 υπνοδωματίου. Επίλεξε τετραγωνικά για ενδεικτική τιμή.',
+  'quote.desc.2 Bedroom':
+    'Καθαρισμός διαμερίσματος 2 υπνοδωματίων. Η τιμή προσαρμόζεται στα τετραγωνικά.',
+  'quote.desc.3 Bedroom':
+    'Καθαρισμός μεγαλύτερου σπιτιού. Διάλεξε δωμάτια και τετραγωνικά για ενδεικτική τιμή.',
+  'quote.desc.Deep Cleaning':
+    'Βαθύς καθαρισμός σε κάθε χώρο. Η ενδεικτική τιμή εξαρτάται από δωμάτια και m².',
+  'quote.desc.Events':
+    'Καθαρισμός μετά από εκδήλωση. Επίλεξε μέγεθος χώρου για ενδεικτική τιμή.',
 
   // Service selection
   'services.title': 'Διάλεξε υπηρεσία',
@@ -68,12 +109,14 @@ const el = {
   'summary.subtitle': 'Έλεγξε την κράτησή σου πριν την πληρωμή.',
   'summary.service': 'Υπηρεσία',
   'summary.option': 'Επιλογή',
+  'summary.rooms': 'Δωμάτια',
   'summary.day': 'Ημέρα',
   'summary.time': 'Ώρα',
   'summary.sqm': 'Τετραγωνικά',
   'summary.extraHours': 'Έξτρα ώρες',
   'summary.total': 'Σύνολο',
   'summary.continue': 'Συνέχεια',
+  'summary.orLogin': 'Έχεις λογαριασμό; Σύνδεση',
   'summary.loginPrompt': 'Συνδέσου ή δημιούργησε λογαριασμό για να ολοκληρώσεις την κράτηση.',
   'summary.loginToConfirm': 'Σύνδεση για ολοκλήρωση',
 
@@ -94,7 +137,13 @@ const el = {
   'contact.step': 'Βήμα 3 από 3 — συμπλήρωσε τα στοιχεία σου για την κράτηση.',
   'contact.saveHint':
     'Θα αποθηκευτούν στο προφίλ σου — στην επόμενη κράτηση δεν θα στα ξαναζητήσουμε.',
+  'contact.guestHint':
+    'Δεν χρειάζεται λογαριασμός. Συμπλήρωσε όνομα, τηλέφωνο και διεύθυνση για να συνεχίσεις.',
+  'contact.name': 'Όνομα',
+  'contact.namePlaceholder': 'π.χ. Μαρία Παπαδοπούλου',
+  'contact.nameError': 'Συμπλήρωσε το όνομά σου',
   'contact.email': 'Email',
+  'contact.emailOptional': 'Email (προαιρετικό)',
   'contact.emailPlaceholder': 'name@example.com',
   'contact.emailError': 'Συμπλήρωσε ένα έγκυρο email',
   'contact.phone': 'Τηλέφωνο',
@@ -287,6 +336,7 @@ const en: Record<TranslationKey, string> = {
 
   'nav.selectDay': 'Day & Time',
   'nav.selectService': 'Select a Service',
+  'nav.quote': 'Price',
   'nav.summary': 'Summary',
   'nav.contact': 'Contact Details',
   'nav.payment': 'Payment',
@@ -294,10 +344,12 @@ const en: Record<TranslationKey, string> = {
   'nav.signup': 'Sign Up',
 
   'calendar.title': 'Pick a day & time',
-  'calendar.step': 'Step 1 of 3 — when should we come?',
+  'calendar.step': 'Step 2 of 3 — when should we come?',
+  'calendar.pickDate': 'Pick a day',
   'calendar.slotsFor': 'Available times',
   'calendar.pickDayHint': 'Tap a day on the calendar to see available times.',
   'calendar.extraHours': 'Extra hours',
+  'calendar.noExtra': 'No extras',
   'calendar.sqm': 'Square meters',
   'calendar.sqmHint': 'Size of the space — required',
   'calendar.sqmPlaceholder': 'e.g. 85',
@@ -306,6 +358,43 @@ const en: Record<TranslationKey, string> = {
   'calendar.noSlots': 'No available times on this day — pick another one.',
   'unit.hours': 'hours',
   'unit.hoursShort': 'h',
+
+  'quote.title': 'Indicative price',
+  'quote.step': 'Step 1 of 3 — rooms & square meters',
+  'quote.pickService': 'Choose a service',
+  'quote.pickServiceHint': 'Pick a service to see the price.',
+  'quote.rooms': 'Rooms',
+  'quote.roomsHint': 'How many bedrooms does the space have?',
+  'quote.sqm': 'Square meters',
+  'quote.sqmHint': 'Size of the space — required',
+  'quote.sqmCustom': 'Other',
+  'quote.chipStudio': 'Studio',
+  'quote.chipRooms': '{n} bed',
+  'quote.from': 'from {price}',
+  'quote.indicative': 'Indicative',
+  'quote.indicativeHint': 'The final price can change if you add extra hours on the calendar.',
+  'quote.included': 'Included',
+  'quote.includedSqm': '{n} m²',
+  'quote.overage': '+{price} extra',
+  'quote.continue': 'Continue to calendar',
+  'quote.bookNow': 'Book now',
+  'quote.description': 'Description',
+  'quote.minDuration': 'Minimum duration',
+  'quote.hoursValue': '{n}:00 hours',
+  'quote.providerTitle': 'About cleaning provider',
+  'quote.providerName': 'EagleClean',
+  'quote.desc.Studio':
+    'Studio clean — indicative price based on the size of the space.',
+  'quote.desc.1 Bedroom':
+    'One-bedroom home clean. Pick square meters to see an indicative price.',
+  'quote.desc.2 Bedroom':
+    'Two-bedroom home clean. The price adjusts to the square meters.',
+  'quote.desc.3 Bedroom':
+    'Larger home clean. Choose rooms and square meters for an indicative price.',
+  'quote.desc.Deep Cleaning':
+    'Deep clean for every room. Indicative price depends on rooms and m².',
+  'quote.desc.Events':
+    'Post-event clean. Pick the size of the venue for an indicative price.',
 
   'services.title': 'Choose a service',
   'services.step': 'Step 2 of 3 — what should we clean?',
@@ -322,12 +411,14 @@ const en: Record<TranslationKey, string> = {
   'summary.subtitle': 'Review your cleaning before payment.',
   'summary.service': 'Service',
   'summary.option': 'Option',
+  'summary.rooms': 'Rooms',
   'summary.day': 'Day',
   'summary.time': 'Time',
   'summary.sqm': 'Square meters',
   'summary.extraHours': 'Extra hours',
   'summary.total': 'Total',
   'summary.continue': 'Continue',
+  'summary.orLogin': 'Have an account? Log in',
   'summary.loginPrompt': 'Log in or create an account to confirm your booking.',
   'summary.loginToConfirm': 'Log in to confirm',
 
@@ -347,7 +438,13 @@ const en: Record<TranslationKey, string> = {
   'contact.step': 'Step 3 of 3 — fill in your details for the booking.',
   'contact.saveHint':
     "They'll be saved to your profile — we won't ask for them again on your next booking.",
+  'contact.guestHint':
+    'No account needed. Enter your name, phone, and address to continue.',
+  'contact.name': 'Name',
+  'contact.namePlaceholder': 'e.g. Maria Papadopoulou',
+  'contact.nameError': 'Enter your name',
   'contact.email': 'Email',
+  'contact.emailOptional': 'Email (optional)',
   'contact.emailPlaceholder': 'name@example.com',
   'contact.emailError': 'Enter a valid email',
   'contact.phone': 'Phone',

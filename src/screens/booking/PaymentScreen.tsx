@@ -35,7 +35,12 @@ async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> 
 
 export default function PaymentScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const amount = bookingTotalCents(route.params.option, route.params.extraHours);
+  const amount = bookingTotalCents(
+    route.params.option,
+    route.params.extraHours,
+    route.params.squareMeters,
+    route.params.rooms
+  );
 
   const [platformPayAvailable, setPlatformPayAvailable] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -122,8 +127,12 @@ export default function PaymentScreen({ navigation, route }: Props) {
           {route.params.timeSlot}
         </Text>
         <Text style={styles.totalMeta}>
-          {route.params.contact.email} · {route.params.contact.phone}
+          {route.params.contact.name}
+          {route.params.contact.phone ? ` · ${route.params.contact.phone}` : ''}
         </Text>
+        {route.params.contact.email ? (
+          <Text style={styles.totalMeta}>{route.params.contact.email}</Text>
+        ) : null}
         <Text style={styles.totalMeta}>{route.params.contact.address}</Text>
       </View>
 

@@ -17,7 +17,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-base text-zinc-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/15"
+          className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-base text-ink outline-none transition focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/20"
           placeholder="admin@example.com"
         />
       </label>
@@ -28,7 +28,7 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-base text-zinc-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/15"
+          className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-base text-ink outline-none transition focus:border-accent focus:bg-white focus:ring-4 focus:ring-accent/20"
           placeholder="••••••••"
         />
       </label>
@@ -40,7 +40,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 rounded-full bg-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(41,70,245,0.28)] transition hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(41,70,245,0.34)] disabled:opacity-60"
+        className="mt-1 rounded-full bg-gradient-to-br from-[#5EE0E0] to-[#1A8F8F] px-5 py-3.5 text-sm font-bold text-[#072424] shadow-[0_10px_24px_rgba(48,204,204,0.35)] transition hover:brightness-105 active:scale-[0.98] disabled:opacity-60"
       >
         {pending ? 'Σύνδεση…' : 'Σύνδεση στο Admin'}
       </button>

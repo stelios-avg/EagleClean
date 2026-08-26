@@ -57,6 +57,7 @@ export async function updateMyProfile(input: {
  * booking can skip the contact step entirely.
  */
 export async function saveContactInfo(input: {
+  fullName?: string;
   phone: string;
   address: string;
 }): Promise<void> {
@@ -68,11 +69,16 @@ export async function saveContactInfo(input: {
     return;
   }
 
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({
+      ...(input.fullName != null ? { full_name: input.fullName.trim() || null } : {}),
       phone: input.phone.trim() || null,
       address: input.address.trim() || null,
     })
     .eq('id', user.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

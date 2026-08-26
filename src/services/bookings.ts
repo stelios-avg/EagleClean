@@ -10,42 +10,48 @@ export type CreateBookingInput = BookingSelection & {
   paymentIntentId?: string | null;
 };
 
-/** Persist a booking for the currently signed-in user. */
-export async function createBooking(input: CreateBookingInput): Promise<Booking> {
+/** Persist a booking. Signed-in customers are linked; guests stay anonymous. */
+export async function createBooking(input: CreateBookingInput): Promise<Booking | null> {
   const {
     data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
 
-  if (userError || !user) {
-    throw new Error(userError?.message ?? 'Not signed in');
+  const row = {
+    user_id: user?.id ?? null,
+    service_date: input.date,
+    time_slot: input.timeSlot,
+    category: input.category,
+    option: input.option,
+    contact_name: input.contact.name.trim(),
+    contact_email: input.contact.email.trim() || null,
+    contact_phone: input.contact.phone.trim(),
+    contact_address: input.contact.address.trim(),
+    square_meters: input.squareMeters,
+    extra_hours: input.extraHours,
+    amount_cents: bookingTotalCents(
+      input.option,
+      input.extraHours,
+      input.squareMeters,
+      input.rooms
+    ),
+    status: input.status ?? 'paid',
+    payment_intent_id: input.paymentIntentId ?? null,
+  };
+
+  if (user) {
+    const { data, error } = await supabase.from('bookings').insert(row).select().single();
+    if (error) {
+      throw new Error(error.message);
+    }
+    return data;
   }
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert({
-      user_id: user.id,
-      service_date: input.date,
-      time_slot: input.timeSlot,
-      category: input.category,
-      option: input.option,
-      contact_email: input.contact.email.trim(),
-      contact_phone: input.contact.phone.trim(),
-      contact_address: input.contact.address.trim(),
-      square_meters: input.squareMeters,
-      extra_hours: input.extraHours,
-      amount_cents: bookingTotalCents(input.option, input.extraHours),
-      status: input.status ?? 'paid',
-      payment_intent_id: input.paymentIntentId ?? null,
-    })
-    .select()
-    .single();
-
+  // Guest inserts cannot RETURNING under RLS (no SELECT policy for anon).
+  const { error } = await supabase.from('bookings').insert(row);
   if (error) {
     throw new Error(error.message);
   }
-
-  return data;
+  return null;
 }
 
 export async function listMyBookings(): Promise<Booking[]> {

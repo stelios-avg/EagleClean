@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6fb;
-  --foreground: #101218;
-  --ink: #0b0c10;
-  --accent: #2946f5;
-  --accent-dark: #1f36c9;
+  --background: #f7fcfc;
+  --foreground: #101616;
+  --ink: #0e1414;
+  --accent: #30cccc;
+  --accent-dark: #1a8f8f;
+  --accent-soft: #d4f4f4;
 }
 
 @theme inline {
@@ -14,9 +15,12 @@
   --color-ink: var(--ink);
   --color-accent: var(--accent);
   --color-accent-dark: var(--accent-dark);
+  --color-accent-soft: var(--accent-soft);
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --color-blue-600: #2946f5;
-  --color-blue-700: #1f36c9;
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
@@ -24,10 +28,15 @@ body {
   color: var(--foreground);
 }
 
+::selection {
+  background: #30cccc;
+  color: #072424;
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -37,4 +46,27 @@ body {
 
 .animate-fade-up {
   animation: fade-up 0.45s ease-out both;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.animate-live-dot {
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-live-dot {
+    animation: none;
+  }
 }

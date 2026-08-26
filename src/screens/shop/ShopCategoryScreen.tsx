@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -11,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SubpageHeader } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { formatEuros } from '../../constants/payments';
 import { useCart } from '../../context/CartContext';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -43,16 +43,16 @@ function ProductRow({ product }: { product: Product }) {
       </View>
 
       {qty === 0 ? (
-        <Pressable
+        <PressableScale
           onPress={() => add(product)}
-          style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.85 }]}
+          style={styles.addBtn}
           hitSlop={8}
         >
-          <Ionicons name="add" size={22} color={colors.textOnDark} />
-        </Pressable>
+          <Ionicons name="add" size={22} color={colors.textOnAccent} />
+        </PressableScale>
       ) : (
         <View style={styles.stepper}>
-          <Pressable
+          <PressableScale
             onPress={() => setQuantity(product.id, qty - 1)}
             style={styles.stepBtn}
             hitSlop={6}
@@ -60,17 +60,17 @@ function ProductRow({ product }: { product: Product }) {
             <Ionicons
               name={qty === 1 ? 'trash-outline' : 'remove'}
               size={17}
-              color={colors.textOnDark}
+              color={colors.textOnAccent}
             />
-          </Pressable>
+          </PressableScale>
           <Text style={styles.stepValue}>{qty}</Text>
-          <Pressable
+          <PressableScale
             onPress={() => add(product)}
             style={styles.stepBtn}
             hitSlop={6}
           >
-            <Ionicons name="add" size={17} color={colors.textOnDark} />
-          </Pressable>
+            <Ionicons name="add" size={17} color={colors.textOnAccent} />
+          </PressableScale>
         </View>
       )}
     </View>
@@ -135,20 +135,16 @@ export default function ShopCategoryScreen({ navigation, route }: Props) {
       )}
 
       {count > 0 ? (
-        <Pressable
+        <PressableScale
           onPress={() => navigation.navigate('ShopCart')}
-          style={({ pressed }) => [
-            styles.cartBar,
-            { bottom: Math.max(insets.bottom, 14) },
-            pressed && { opacity: 0.9 },
-          ]}
+          style={[styles.cartBar, { bottom: Math.max(insets.bottom, 14) }]}
         >
           <View style={styles.cartBadge}>
             <Text style={styles.cartBadgeText}>{count}</Text>
           </View>
           <Text style={styles.cartBarLabel}>{t('shop.viewCart')}</Text>
           <Text style={styles.cartBarTotal}>{formatEuros(totalCents)}</Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );
@@ -260,24 +256,24 @@ const styles = StyleSheet.create({
     minWidth: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(26,22,8,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
   cartBadgeText: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 13,
     fontFamily: fonts.extraBold,
   },
   cartBarLabel: {
     flex: 1,
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 15,
     fontFamily: fonts.bold,
   },
   cartBarTotal: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontFamily: fonts.extraBold,
   },

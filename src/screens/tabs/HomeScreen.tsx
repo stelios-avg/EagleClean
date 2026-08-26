@@ -3,7 +3,6 @@ import {
   Alert,
   Image,
   ImageBackground,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo, ImageCard, LanguageToggle, PillButton } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -79,7 +79,7 @@ const PLANS: {
     id: 'platinum',
     name: 'Platinum',
     pricePerMonth: 499,
-    tint: '#2946F5',
+    tint: '#8C6A2F',
     featureKeys: [
       'plans.platinum.f1',
       'plans.platinum.f2',
@@ -103,11 +103,11 @@ function SectionHeader({
       <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.15}>
         {title}
       </Text>
-      <Pressable onPress={onAction} hitSlop={8}>
+      <PressableScale onPress={onAction} hitSlop={8}>
         <Text style={styles.sectionAction} maxFontSizeMultiplier={1.1}>
           {actionLabel}
         </Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -125,8 +125,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   const bookService = (option: ServiceOption) =>
     navigation.navigate('BookingFlow', {
-      screen: 'Calendar',
-      params: { preselected: option },
+      screen: 'Quote',
+      params: { option },
     });
 
   return (
@@ -157,16 +157,13 @@ export default function HomeScreen({ navigation }: Props) {
           </Text>
 
           {/* Search-style booking CTA */}
-          <Pressable
-            onPress={startBooking}
-            style={({ pressed }) => [styles.searchBar, pressed && { opacity: 0.9 }]}
-          >
+          <PressableScale onPress={startBooking} style={styles.searchBar}>
             <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
             <Text style={styles.searchText}>{t('home.searchCta')}</Text>
             <View style={styles.searchButton}>
-              <Ionicons name="arrow-forward" size={20} color={colors.textOnDark} />
+              <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
             </View>
-          </Pressable>
+          </PressableScale>
         </View>
       </ImageBackground>
 
@@ -182,7 +179,7 @@ export default function HomeScreen({ navigation }: Props) {
         contentContainerStyle={styles.categoriesRow}
       >
         {CATEGORIES.map(({ option, icon }) => (
-          <Pressable key={option} onPress={() => bookService(option)} style={styles.category}>
+          <PressableScale key={option} onPress={() => bookService(option)} style={styles.category}>
             <View style={styles.categoryCircle}>
               <Image source={icon} style={styles.categoryIcon} resizeMode="contain" />
             </View>
@@ -193,7 +190,7 @@ export default function HomeScreen({ navigation }: Props) {
             >
               {t(`service.${option}`)}
             </Text>
-          </Pressable>
+          </PressableScale>
         ))}
       </ScrollView>
 
@@ -209,15 +206,17 @@ export default function HomeScreen({ navigation }: Props) {
         contentContainerStyle={styles.featuredRow}
       >
         {FEATURED.map(({ option, image }) => (
-          <Pressable
+          <PressableScale
             key={option}
             onPress={() => bookService(option)}
-            style={({ pressed }) => [styles.featuredCard, pressed && { opacity: 0.92 }]}
+            style={styles.featuredCard}
           >
             <View style={styles.featuredImageWrap}>
               <Image source={image} style={styles.featuredImage} resizeMode="cover" />
               <View style={styles.pricePill}>
-                <Text style={styles.priceText}>{formatEuros(SERVICE_PRICES[option])}</Text>
+                <Text style={styles.priceText}>
+                  {t('quote.from', { price: formatEuros(SERVICE_PRICES[option]) })}
+                </Text>
               </View>
             </View>
             <Text style={styles.featuredTitle} maxFontSizeMultiplier={1.15}>
@@ -228,7 +227,7 @@ export default function HomeScreen({ navigation }: Props) {
                 <Ionicons key={i} name="star-outline" size={14} color={colors.tabInactive} />
               ))}
             </View>
-          </Pressable>
+          </PressableScale>
         ))}
       </ScrollView>
 
@@ -425,8 +424,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   priceText: {
-    color: colors.textOnDark,
-    fontSize: 14,
+    color: colors.textOnAccent,
+    fontSize: 13,
     fontFamily: fonts.extraBold,
   },
   featuredTitle: {
@@ -478,7 +477,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   popularBadgeText: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 12,
     fontFamily: fonts.bold,
   },

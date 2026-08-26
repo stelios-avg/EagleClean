@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SubpageHeader } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { formatEuros } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
 import { supabase } from '../../lib/supabase';
@@ -26,7 +26,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MyBookings'>;
 
 const STATUS_COLORS: Record<BookingStatus, { bg: string; fg: string }> = {
   pending: { bg: '#FEF3C7', fg: '#92400E' },
-  paid: { bg: '#DBEAFE', fg: '#1D4ED8' },
+  paid: { bg: '#D4F4F4', fg: '#1A8F8F' },
   accepted: { bg: '#D1FAE5', fg: '#065F46' },
   rejected: { bg: '#FEE2E2', fg: '#B91C1C' },
   completed: { bg: '#F4F4F5', fg: '#3F3F46' },
@@ -134,13 +134,13 @@ export default function MyBookingsScreen({ navigation }: Props) {
         <View style={styles.cardBottom}>
           <Text style={styles.amount}>{formatEuros(item.amount_cents)}</Text>
           {isCancellable(item) ? (
-            <Pressable
+            <PressableScale
               onPress={() => confirmCancel(item)}
               hitSlop={8}
-              style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}
+              style={styles.cancelBtn}
             >
               <Text style={styles.cancelText}>{t('bookings.cancel')}</Text>
-            </Pressable>
+            </PressableScale>
           ) : null}
         </View>
       </View>

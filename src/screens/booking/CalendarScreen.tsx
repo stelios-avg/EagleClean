@@ -1,23 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
+  Image,
   Linking,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { Heading, PillButton, Subtitle } from '../../components/ui';
+import { PillButton } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import {
   BASE_DURATION_HOURS,
-  DEFAULT_DURATION_HOURS,
   getSlotStartHours,
   isSlotTaken,
   maxExtraHoursWithBookings,
@@ -27,12 +24,11 @@ import {
 import { getBookedSlots } from '../../services/bookings';
 import { checkServiceArea, type ServiceAreaStatus } from '../../services/serviceArea';
 import { useI18n } from '../../i18n/LanguageContext';
+import { categoryFor } from '../../navigation/types';
 import { colors, fonts, radii, spacing } from '../../theme';
-import type { BookingStackParamList, HomeSize } from '../../navigation/types';
+import type { BookingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Calendar'>;
-
-const HOME_SIZES: HomeSize[] = ['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom'];
 
 /** Local (not UTC) YYYY-MM-DD, so days don't shift across timezones. */
 function toISODate(d: Date): string {
@@ -55,19 +51,51 @@ function getMonthGrid(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
+function Chip({
+  label,
+  selected,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <PressableScale
+      onPress={onPress}
+      disabled={disabled}
+      scaleTo={0.96}
+      style={[
+        styles.chip,
+        selected && styles.chipSelected,
+        disabled && styles.chipDisabled,
+      ]}
+    >
+      <Text
+        style={[
+          styles.chipLabel,
+          selected && styles.chipLabelSelected,
+          disabled && styles.chipLabelDisabled,
+        ]}
+      >
+        {label}
+      </Text>
+    </PressableScale>
+  );
+}
+
 export default function CalendarScreen({ navigation, route }: Props) {
   const { t, locale } = useI18n();
-  const preselected = route.params?.preselected;
+  const insets = useSafeAreaInsets();
+  const { option, rooms, squareMeters } = route.params;
 
-  // Slot length follows the chosen service: 2h regular, 3h deep, 4h events.
-  const duration = preselected
-    ? BASE_DURATION_HOURS[preselected]
-    : DEFAULT_DURATION_HOURS;
+  const duration = BASE_DURATION_HOURS[option];
   const slotStartHours = useMemo(() => getSlotStartHours(duration), [duration]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  // Bookings start from tomorrow.
   const minDate = new Date(today);
   minDate.setDate(minDate.getDate() + 1);
 
@@ -77,13 +105,9 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const [selected, setSelected] = useState<Date | null>(null);
   const [startHour, setStartHour] = useState<number | null>(null);
   const [extraHours, setExtraHours] = useState(0);
-  const [sqm, setSqm] = useState('');
-  const [sqmError, setSqmError] = useState(false);
   const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Bookings are only accepted from inside Nicosia — verified via the
-  // device location before the calendar is shown.
   const [areaStatus, setAreaStatus] = useState<ServiceAreaStatus | 'checking'>(
     'checking'
   );
@@ -95,7 +119,6 @@ export default function CalendarScreen({ navigation, route }: Props) {
     runAreaCheck();
   }, [runAreaCheck]);
 
-  // Gray out slots already taken by other bookings on the chosen day.
   useEffect(() => {
     if (!selected) {
       return;
@@ -109,7 +132,6 @@ export default function CalendarScreen({ navigation, route }: Props) {
         }
       })
       .catch(() => {
-        // Availability is best-effort — on failure show everything.
         if (!stale) {
           setBookedRanges([]);
         }
@@ -132,7 +154,6 @@ export default function CalendarScreen({ navigation, route }: Props) {
     year === today.getFullYear() && month === today.getMonth();
 
   const weekdayLabels = useMemo(() => {
-    // 2024-01-01 is a Monday.
     return Array.from({ length: 7 }, (_, i) =>
       new Date(2024, 0, 1 + i)
         .toLocaleDateString(locale, { weekday: 'short' })
@@ -171,7 +192,6 @@ export default function CalendarScreen({ navigation, route }: Props) {
     startHour !== null
       ? maxExtraHoursWithBookings(startHour, duration, bookedRanges)
       : 0;
-  // Booked ranges may load after a slot was picked — never exceed the cap.
   useEffect(() => {
     setExtraHours((v) => Math.min(v, maxExtra));
   }, [maxExtra]);
@@ -180,44 +200,38 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const allSlotsTaken =
     !loadingSlots &&
     slotStartHours.every((hour) => isSlotTaken(hour, duration, bookedRanges));
-  const squareMeters = parseInt(sqm, 10);
-  const sqmValid = Number.isFinite(squareMeters) && squareMeters > 0;
 
   const handleContinue = () => {
     if (!selected || startHour === null) {
       return;
     }
-    if (!sqmValid) {
-      setSqmError(true);
-      return;
-    }
-    Keyboard.dismiss();
-    const date = toISODate(selected);
-    if (preselected) {
-      // Category was already chosen on the Home screen — skip ServiceSelection.
-      navigation.navigate('BookingSummary', {
-        date,
-        timeSlot: slotLabel(startHour, totalHours),
-        category: (HOME_SIZES as string[]).includes(preselected)
-          ? 'my-home'
-          : 'cleaning-crew',
-        option: preselected,
-        squareMeters,
-        extraHours,
-      });
-      return;
-    }
-    navigation.navigate('ServiceSelection', {
-      date,
-      startHour,
-      extraHours,
+    navigation.navigate('BookingSummary', {
+      date: toISODate(selected),
+      timeSlot: slotLabel(startHour, totalHours),
+      category: categoryFor(option),
+      option,
+      rooms,
       squareMeters,
+      extraHours,
     });
   };
 
+  const extraChoices = Array.from({ length: maxExtra + 1 }, (_, i) => i);
+  const hero =
+    option === 'Events'
+      ? require('../../../assets/images/service-crew.png')
+      : require('../../../assets/images/service-home.png');
+
   if (areaStatus !== 'inside') {
     return (
-      <View style={[styles.root, styles.areaCenter]}>
+      <View style={[styles.root, styles.areaCenter, { paddingTop: insets.top }]}>
+        <PressableScale
+          onPress={() => navigation.goBack()}
+          style={[styles.roundBtn, styles.roundBtnStatic]}
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+        </PressableScale>
         {areaStatus === 'checking' ? (
           <>
             <ActivityIndicator color={colors.accent} size="large" />
@@ -266,95 +280,102 @@ export default function CalendarScreen({ navigation, route }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
+    <View style={styles.root}>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Heading>{t('calendar.title')}</Heading>
-        <Subtitle>{t('calendar.step')}</Subtitle>
-        {preselected ? (
-          <View style={styles.preselectedChip}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-            <Text style={styles.preselectedLabel}>
-              {t(`service.${preselected}`)} · {duration}
-              {t('unit.hoursShort')}
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.heroWrap}>
+          <Image source={hero} style={styles.hero} resizeMode="cover" />
+          <PressableScale
+            onPress={() => navigation.goBack()}
+            style={[styles.roundBtn, { top: insets.top + 8 }]}
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          </PressableScale>
+        </View>
 
-        <View style={styles.calendarCard}>
-          {/* Month header */}
-          <View style={styles.monthHeader}>
-            <Pressable
-              onPress={() => changeMonth(-1)}
-              disabled={atCurrentMonth}
-              hitSlop={10}
-              style={[styles.monthArrow, atCurrentMonth && { opacity: 0.25 }]}
-            >
-              <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-            </Pressable>
-            <Text style={styles.monthTitle}>{monthTitle}</Text>
-            <Pressable onPress={() => changeMonth(1)} hitSlop={10} style={styles.monthArrow}>
-              <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
-            </Pressable>
-          </View>
+        <View style={styles.summaryCard}>
+          <Text style={styles.category}>
+            {categoryFor(option) === 'my-home' ? t('services.myHome') : t('services.crew')}
+          </Text>
+          <Text style={styles.title}>{t(`service.${option}`).replace(/\n/g, '')}</Text>
+          <Text style={styles.summaryMeta}>
+            {squareMeters} m²
+            {rooms > 0 ? ` · ${t('quote.chipRooms', { n: String(rooms) })}` : ` · ${t('quote.chipStudio')}`}
+            {` · ${t('quote.hoursValue', { n: String(duration) })}`}
+          </Text>
+        </View>
 
-          {/* Weekday labels */}
-          <View style={styles.weekRow}>
-            {weekdayLabels.map((label) => (
-              <Text key={label} style={styles.weekdayLabel}>
-                {label}
-              </Text>
-            ))}
-          </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('calendar.pickDate')}</Text>
+          <View style={styles.calendarCard}>
+            <View style={styles.monthHeader}>
+              <PressableScale
+                onPress={() => changeMonth(-1)}
+                disabled={atCurrentMonth}
+                hitSlop={10}
+                style={[styles.monthArrow, atCurrentMonth && { opacity: 0.25 }]}
+              >
+                <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+              </PressableScale>
+              <Text style={styles.monthTitle}>{monthTitle}</Text>
+              <PressableScale onPress={() => changeMonth(1)} hitSlop={10} style={styles.monthArrow}>
+                <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
+              </PressableScale>
+            </View>
 
-          {/* Day grid */}
-          <View style={styles.grid}>
-            {grid.map((day, i) => {
-              if (!day) {
-                return <View key={`empty-${i}`} style={styles.dayCell} />;
-              }
-              const disabled = day < minDate;
-              const isSelected =
-                !!selected && toISODate(day) === toISODate(selected);
-              const isToday = toISODate(day) === toISODate(today);
-              return (
-                <View key={toISODate(day)} style={styles.dayCell}>
-                  <Pressable
-                    disabled={disabled}
-                    onPress={() => pickDay(day)}
-                    style={[
-                      styles.dayCircle,
-                      isToday && !isSelected && styles.dayToday,
-                      isSelected && styles.daySelected,
-                    ]}
-                  >
-                    <Text
+            <View style={styles.weekRow}>
+              {weekdayLabels.map((label) => (
+                <Text key={label} style={styles.weekdayLabel}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+
+            <View style={styles.grid}>
+              {grid.map((day, i) => {
+                if (!day) {
+                  return <View key={`empty-${i}`} style={styles.dayCell} />;
+                }
+                const disabled = day < minDate;
+                const isSelected =
+                  !!selected && toISODate(day) === toISODate(selected);
+                const isToday = toISODate(day) === toISODate(today);
+                return (
+                  <View key={toISODate(day)} style={styles.dayCell}>
+                    <PressableScale
+                      disabled={disabled}
+                      onPress={() => pickDay(day)}
+                      scaleTo={0.88}
                       style={[
-                        styles.dayLabel,
-                        disabled && styles.dayDisabled,
-                        isSelected && styles.dayLabelSelected,
+                        styles.dayCircle,
+                        isToday && !isSelected && styles.dayToday,
+                        isSelected && styles.daySelected,
                       ]}
                     >
-                      {day.getDate()}
-                    </Text>
-                  </Pressable>
-                </View>
-              );
-            })}
+                      <Text
+                        style={[
+                          styles.dayLabel,
+                          disabled && styles.dayDisabled,
+                          isSelected && styles.dayLabelSelected,
+                        ]}
+                      >
+                        {day.getDate()}
+                      </Text>
+                    </PressableScale>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         </View>
 
-        {/* Time slots for the selected day */}
         {selected ? (
-          <View style={styles.slotsSection}>
-            <Text style={styles.slotsTitle}>{t('calendar.slotsFor')}</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('calendar.slotsFor')}</Text>
             <Text style={styles.slotsDate}>{selectedPretty}</Text>
             {loadingSlots ? (
               <ActivityIndicator color={colors.accent} style={{ marginVertical: 16 }} />
@@ -364,144 +385,135 @@ export default function CalendarScreen({ navigation, route }: Props) {
                 <Text style={styles.hintText}>{t('calendar.noSlots')}</Text>
               </View>
             ) : (
-              <View style={styles.slotsGrid}>
+              <View style={styles.chipWrap}>
                 {slotStartHours.map((hour) => {
                   const taken = isSlotTaken(hour, duration, bookedRanges);
-                  const active = startHour === hour;
                   return (
-                    <Pressable
+                    <Chip
                       key={hour}
+                      label={slotLabel(hour, duration)}
+                      selected={startHour === hour}
                       disabled={taken}
                       onPress={() => pickSlot(hour)}
-                      style={({ pressed }) => [
-                        styles.slotChip,
-                        active && styles.slotChipActive,
-                        taken && styles.slotChipTaken,
-                        pressed && !active && !taken && { backgroundColor: colors.surface },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.slotLabel,
-                          active && styles.slotLabelActive,
-                          taken && styles.slotLabelTaken,
-                        ]}
-                      >
-                        {slotLabel(hour, duration)}
-                      </Text>
-                    </Pressable>
+                    />
                   );
                 })}
               </View>
             )}
 
             {startHour !== null ? (
-              <>
-                {/* Extra hours stepper */}
-                <View style={styles.optionCard}>
-                  <View style={styles.optionCopy}>
-                    <Text style={styles.optionLabel}>{t('calendar.extraHours')}</Text>
-                    <Text style={styles.optionHint}>
-                      {slotLabel(startHour, totalHours)} · {totalHours}{' '}
-                      {t('unit.hours')}
-                    </Text>
-                  </View>
-                  <View style={styles.stepper}>
-                    <Pressable
-                      onPress={() => setExtraHours((v) => Math.max(0, v - 1))}
-                      disabled={extraHours === 0}
-                      style={[styles.stepBtn, extraHours === 0 && styles.stepBtnDisabled]}
-                      hitSlop={6}
-                    >
-                      <Ionicons name="remove" size={20} color={colors.textOnDark} />
-                    </Pressable>
-                    <Text style={styles.stepValue}>+{extraHours}</Text>
-                    <Pressable
-                      onPress={() => setExtraHours((v) => Math.min(maxExtra, v + 1))}
-                      disabled={extraHours >= maxExtra}
-                      style={[styles.stepBtn, extraHours >= maxExtra && styles.stepBtnDisabled]}
-                      hitSlop={6}
-                    >
-                      <Ionicons name="add" size={20} color={colors.textOnDark} />
-                    </Pressable>
-                  </View>
-                </View>
-
-                {/* Mandatory square meters */}
-                <View style={styles.optionCard}>
-                  <View style={styles.optionCopy}>
-                    <Text style={styles.optionLabel}>{t('calendar.sqm')}</Text>
-                    <Text style={styles.optionHint}>{t('calendar.sqmHint')}</Text>
-                  </View>
-                  <View
-                    style={[styles.sqmInputWrap, sqmError && !sqmValid && styles.sqmInputError]}
-                  >
-                    <TextInput
-                      value={sqm}
-                      onChangeText={(v) => {
-                        setSqm(v.replace(/[^0-9]/g, ''));
-                        setSqmError(false);
-                      }}
-                      placeholder={t('calendar.sqmPlaceholder')}
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="number-pad"
-                      maxLength={5}
-                      style={styles.sqmInput}
+              <View style={{ gap: 10, marginTop: 8 }}>
+                <Text style={styles.sectionTitle}>{t('calendar.extraHours')}</Text>
+                <Text style={styles.slotsDate}>
+                  {slotLabel(startHour, totalHours)} · {totalHours} {t('unit.hours')}
+                </Text>
+                <View style={styles.chipWrap}>
+                  {extraChoices.map((hours) => (
+                    <Chip
+                      key={hours}
+                      label={hours === 0 ? t('calendar.noExtra') : `+${hours}`}
+                      selected={extraHours === hours}
+                      onPress={() => setExtraHours(hours)}
                     />
-                    <Text style={styles.sqmUnit}>m²</Text>
-                  </View>
+                  ))}
                 </View>
-                {sqmError && !sqmValid ? (
-                  <Text style={styles.errorText}>{t('calendar.sqmError')}</Text>
-                ) : null}
-
-                <View style={{ height: 6 }} />
-                <PillButton label={t('calendar.continue')} onPress={handleContinue} />
-              </>
+              </View>
             ) : null}
           </View>
         ) : (
-          <View style={styles.hintRow}>
+          <View style={[styles.section, styles.hintRow]}>
             <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
             <Text style={styles.hintText}>{t('calendar.pickDayHint')}</Text>
           </View>
         )}
       </ScrollView>
-    </KeyboardAvoidingView>
+
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <PillButton
+          label={t('calendar.continue')}
+          onPress={handleContinue}
+          disabled={!selected || startHour === null}
+        />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: colors.page,
+  },
+  heroWrap: {
+    height: 180,
+    backgroundColor: colors.ink,
+  },
+  hero: {
+    width: '100%',
+    height: '100%',
+  },
+  roundBtn: {
+    position: 'absolute',
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.background,
-  },
-  content: {
-    padding: spacing.screen,
-    gap: 8,
-    paddingBottom: 40,
-  },
-  preselectedChip: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: radii.pill,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginTop: 4,
+    justifyContent: 'center',
+    shadowColor: '#101218',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-  preselectedLabel: {
+  roundBtnStatic: {
+    position: 'relative',
+    left: 0,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  summaryCard: {
+    marginTop: -28,
+    marginHorizontal: 16,
+    backgroundColor: colors.background,
+    borderRadius: 24,
+    padding: 18,
+    gap: 4,
+    shadowColor: '#101218',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  category: {
     fontSize: 13,
-    fontFamily: fonts.bold,
+    fontFamily: fonts.semiBold,
+    color: colors.accent,
+  },
+  title: {
+    fontSize: 22,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+  },
+  summaryMeta: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
   },
   calendarCard: {
-    marginTop: 10,
-    borderRadius: radii.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 22,
     backgroundColor: colors.background,
     padding: 14,
   },
@@ -515,7 +527,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.page,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -568,159 +580,69 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   dayLabelSelected: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontFamily: fonts.extraBold,
   },
   dayDisabled: {
     color: colors.border,
   },
-  slotsSection: {
-    marginTop: 14,
-    gap: 4,
-  },
-  slotsTitle: {
-    fontSize: 18,
-    fontFamily: fonts.extraBold,
-    color: colors.textPrimary,
-  },
   slotsDate: {
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
-    marginBottom: 8,
     textTransform: 'capitalize',
+    marginTop: -4,
   },
-  slotsGrid: {
+  chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
-  slotChip: {
-    width: '48%',
-    paddingVertical: 14,
-    borderRadius: radii.row,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    backgroundColor: colors.background,
+  chip: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: colors.accentSoft,
   },
-  slotChipActive: {
-    borderColor: colors.accent,
+  chipSelected: {
     backgroundColor: colors.accent,
   },
-  slotChipTaken: {
+  chipDisabled: {
     backgroundColor: colors.surface,
-    borderColor: colors.surface,
   },
-  slotLabel: {
-    fontSize: 15,
+  chipLabel: {
+    fontSize: 13,
+    fontFamily: fonts.semiBold,
+    color: colors.accent,
+  },
+  chipLabelSelected: {
+    color: colors.textOnAccent,
     fontFamily: fonts.bold,
-    color: colors.textPrimary,
   },
-  slotLabelActive: {
-    color: colors.textOnDark,
-  },
-  slotLabelTaken: {
+  chipLabelDisabled: {
     color: colors.border,
     textDecorationLine: 'line-through',
-  },
-  optionCard: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    borderRadius: radii.row,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: colors.background,
-  },
-  optionCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  optionLabel: {
-    fontSize: 15,
-    fontFamily: fonts.bold,
-    color: colors.textPrimary,
-  },
-  optionHint: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    color: colors.textSecondary,
-  },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  stepBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepBtnDisabled: {
-    opacity: 0.3,
-  },
-  stepValue: {
-    minWidth: 32,
-    textAlign: 'center',
-    fontSize: 16,
-    fontFamily: fonts.extraBold,
-    color: colors.textPrimary,
-  },
-  sqmInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    backgroundColor: colors.surface,
-    minWidth: 110,
-  },
-  sqmInputError: {
-    borderColor: '#E5484D',
-  },
-  sqmInput: {
-    flex: 1,
-    paddingVertical: 10,
-    fontSize: 16,
-    fontFamily: fonts.bold,
-    color: colors.textPrimary,
-    textAlign: 'right',
-  },
-  sqmUnit: {
-    fontSize: 14,
-    fontFamily: fonts.semiBold,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    marginTop: 6,
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    color: '#E5484D',
   },
   hintRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 14,
     padding: 14,
     borderRadius: radii.row,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   hintText: {
     flex: 1,
     fontSize: 14,
     fontFamily: fonts.regular,
     color: colors.textSecondary,
+  },
+  footer: {
+    paddingHorizontal: spacing.screen,
+    paddingTop: 12,
+    backgroundColor: colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
   areaCenter: {
     alignItems: 'center',

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Heading, Subtitle } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { SHOP_CATEGORIES } from '../../constants/shop';
 import { formatEuros } from '../../constants/payments';
 import { useCart } from '../../context/CartContext';
@@ -25,10 +26,10 @@ export default function MarketplaceScreen() {
 
         <View style={styles.grid}>
           {SHOP_CATEGORIES.map((cat) => (
-            <Pressable
+            <PressableScale
               key={cat.slug}
               onPress={() => navigation.navigate('ShopCategory', { category: cat.slug })}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+              style={styles.card}
             >
               <View style={styles.cardIcon}>
                 <Ionicons name={cat.icon} size={24} color={colors.accent} />
@@ -36,22 +37,22 @@ export default function MarketplaceScreen() {
               <Text style={styles.cardLabel} numberOfLines={2}>
                 {t(`shopCat.${cat.slug}`)}
               </Text>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       </ScrollView>
 
       {count > 0 ? (
-        <Pressable
+        <PressableScale
           onPress={() => navigation.navigate('ShopCart')}
-          style={({ pressed }) => [styles.cartBar, pressed && { opacity: 0.9 }]}
+          style={styles.cartBar}
         >
           <View style={styles.cartBadge}>
             <Text style={styles.cartBadgeText}>{count}</Text>
           </View>
           <Text style={styles.cartBarLabel}>{t('shop.viewCart')}</Text>
           <Text style={styles.cartBarTotal}>{formatEuros(totalCents)}</Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );
@@ -82,9 +83,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 16,
     gap: 10,
-  },
-  cardPressed: {
-    backgroundColor: colors.surface,
   },
   cardIcon: {
     width: 46,
@@ -117,24 +115,24 @@ const styles = StyleSheet.create({
     minWidth: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(26,22,8,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
   cartBadgeText: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 13,
     fontFamily: fonts.extraBold,
   },
   cartBarLabel: {
     flex: 1,
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 15,
     fontFamily: fonts.bold,
   },
   cartBarTotal: {
-    color: colors.textOnDark,
+    color: colors.textOnAccent,
     fontSize: 16,
     fontFamily: fonts.extraBold,
   },

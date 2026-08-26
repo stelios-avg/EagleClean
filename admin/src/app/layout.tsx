@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import './globals.css';
 
@@ -10,6 +10,10 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: 'EagleClean Admin',
   description: 'Διαχείριση κρατήσεων EagleClean',
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0E1414',
 };
 
 export default function RootLayout({

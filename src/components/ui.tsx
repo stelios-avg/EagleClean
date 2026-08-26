@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Image,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { PressableScale } from './PressableScale';
 import { useI18n } from '../i18n/LanguageContext';
 import type { Language } from '../i18n/translations';
 import { colors, fonts, radii, spacing } from '../theme';
@@ -85,7 +85,7 @@ type PillVariant = 'light' | 'dark' | 'accent' | 'ghost' | 'outline';
 const pillTextColor: Record<PillVariant, string> = {
   light: colors.textPrimary,
   dark: colors.textOnDark,
-  accent: colors.textOnDark,
+  accent: colors.textOnAccent,
   ghost: colors.textOnDark,
   outline: colors.textPrimary,
 };
@@ -102,17 +102,21 @@ export function PillButton({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.pill,
-        styles[`pill_${variant}`],
-        (pressed || disabled) && { opacity: 0.75 },
-      ]}
+      style={[styles.pill, styles[`pill_${variant}`], disabled && styles.pillDisabled]}
     >
+      {variant === 'accent' ? (
+        <LinearGradient
+          colors={[colors.accentStart, colors.accentEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       <Text style={[styles.pillLabel, { color: pillTextColor[variant] }]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -139,10 +143,7 @@ export function ImageCard({
       ? [StyleSheet.absoluteFill, { height: '170%' as const, top: '-70%' as const }]
       : StyleSheet.absoluteFill;
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.imageCard, { height }, pressed && { opacity: 0.92 }]}
-    >
+    <PressableScale onPress={onPress} style={[styles.imageCard, { height }]}>
       <Image source={image} style={imageStyle} resizeMode="cover" />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.72)']}
@@ -155,7 +156,7 @@ export function ImageCard({
           <Ionicons name="chevron-forward" size={16} color={colors.textOnDark} />
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -172,10 +173,7 @@ export function ListRow({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.listRow, pressed && { backgroundColor: colors.surface }]}
-    >
+    <PressableScale onPress={onPress} style={styles.listRow}>
       {icon && (
         <View style={styles.listRowIcon}>
           <Ionicons name={icon} size={20} color={colors.accent} />
@@ -186,7 +184,7 @@ export function ListRow({
         {sublabel ? <Text style={styles.listRowSublabel}>{sublabel}</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -238,10 +236,9 @@ export function FormInput({
           style={styles.inputField}
         />
         {secureTextEntry ? (
-          <Pressable
+          <PressableScale
             onPress={() => setHidden((v) => !v)}
             hitSlop={10}
-            accessibilityRole="button"
             accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
           >
             <Ionicons
@@ -249,7 +246,7 @@ export function FormInput({
               size={20}
               color={colors.textSecondary}
             />
-          </Pressable>
+          </PressableScale>
         ) : null}
       </View>
       {error ? <Text style={styles.inputError}>{error}</Text> : null}
@@ -266,28 +263,29 @@ export function LanguageToggle({ onDark = false }: { onDark?: boolean }) {
       {options.map((lang) => {
         const active = language === lang;
         return (
-          <Pressable
+          <PressableScale
             key={lang}
             onPress={() => setLanguage(lang)}
+            haptic
             style={[styles.langChip, active && styles.langChipActive]}
           >
             <Text
               style={[
                 styles.langLabel,
                 onDark && !active && { color: colors.textOnDarkMuted },
-                active && { color: colors.textOnDark },
+                active && { color: colors.textOnAccent },
               ]}
             >
               {lang.toUpperCase()}
             </Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>
   );
 }
 
-/** Blue header with a back arrow for screens pushed on the root stack. */
+/** Ink header with a back arrow for screens pushed on the root stack. */
 export function SubpageHeader({
   title,
   onBack,
@@ -299,15 +297,14 @@ export function SubpageHeader({
 }) {
   return (
     <View style={[styles.subpageHeader, { paddingTop: topInset + 6 }]}>
-      <Pressable
+      <PressableScale
         onPress={onBack}
         hitSlop={12}
         style={styles.subpageBack}
-        accessibilityRole="button"
         accessibilityLabel="Back"
       >
         <Ionicons name="chevron-back" size={24} color={colors.textOnDark} />
-      </Pressable>
+      </PressableScale>
       <Text style={styles.subpageTitle} numberOfLines={1}>
         {title}
       </Text>
@@ -319,12 +316,12 @@ export function SubpageHeader({
 /** Compact centered chip, used for the time slot grid. */
 export function Chip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      style={({ pressed }) => [styles.chip, pressed && { backgroundColor: colors.surface }]}
+      style={styles.chip}
     >
       <Text style={styles.chipLabel}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -361,6 +358,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   pill_light: { backgroundColor: colors.background },
   pill_dark: { backgroundColor: colors.ink },
@@ -374,6 +373,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: colors.border,
+  },
+  pillDisabled: {
+    opacity: 0.45,
   },
   pillLabel: {
     fontSize: 16,
@@ -509,7 +511,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.accent,
+    backgroundColor: colors.ink,
     paddingHorizontal: 10,
     paddingBottom: 12,
   },

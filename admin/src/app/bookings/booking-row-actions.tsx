@@ -50,51 +50,48 @@ export function BookingRowActions({
     });
   };
 
-  // Only offer the transitions that make sense for the current status:
-  // pending/paid -> accept or reject, accepted -> complete or reject.
-  // Final states (completed, rejected, cancelled) only allow deletion.
   const canAccept = status === 'pending' || status === 'paid';
   const canReject = status === 'pending' || status === 'paid' || status === 'accepted';
   const canComplete = status === 'accepted';
 
   return (
-    <div className="flex min-w-[220px] flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5">
       <div className="flex flex-wrap gap-2">
-        {canAccept && (
+        {canAccept ? (
           <button
             type="button"
             disabled={pending}
             onClick={() => run('accepted')}
-            className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-50"
           >
-            Accept
+            Αποδοχή
           </button>
-        )}
-        {canComplete && (
+        ) : null}
+        {canComplete ? (
           <button
             type="button"
             disabled={pending}
             onClick={() => run('completed')}
-            className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.97] disabled:opacity-50"
           >
-            Completed
+            Ολοκλήρωση
           </button>
-        )}
-        {canReject && (
+        ) : null}
+        {canReject ? (
           <button
             type="button"
             disabled={pending}
             onClick={() => run('rejected')}
-            className="rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+            className="rounded-full bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.97] disabled:opacity-50"
           >
-            Reject
+            Απόρριψη
           </button>
-        )}
+        ) : null}
         <button
           type="button"
           disabled={pending}
           onClick={remove}
-          className="rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+          className="rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50 active:scale-[0.97] disabled:opacity-50"
         >
           Διαγραφή
         </button>
@@ -104,15 +101,15 @@ export function BookingRowActions({
           value={noteValue}
           onChange={(e) => setNoteValue(e.target.value)}
           placeholder="Σημειώσεις support…"
-          className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none transition focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-600/20"
+          className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none transition focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/25"
         />
         <button
           type="button"
           disabled={pending}
           onClick={saveNotes}
-          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 transition hover:bg-accent-soft active:scale-[0.97] disabled:opacity-50"
         >
-          Save
+          Αποθήκευση
         </button>
       </div>
       {error ? <p className="text-xs font-medium text-red-600">{error}</p> : null}

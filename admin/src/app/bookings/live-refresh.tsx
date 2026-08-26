@@ -9,10 +9,9 @@ import { createClient } from '@/lib/supabase/client';
  * - Supabase Realtime pushes INSERT/UPDATE events for the bookings table
  * - a 60s polling interval and a refresh-on-focus act as a safety net
  */
-export function LiveRefresh() {
+export function LiveRefresh({ onDark = false }: { onDark?: boolean }) {
   const router = useRouter();
   const [live, setLive] = useState(false);
-  // Collapse bursts of events into a single refresh.
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -50,16 +49,23 @@ export function LiveRefresh() {
     };
   }, [router]);
 
+  const idle = onDark
+    ? 'bg-white/10 text-white/55'
+    : 'bg-zinc-100 text-zinc-500';
+  const active = onDark
+    ? 'bg-accent/20 text-accent'
+    : 'bg-accent-soft text-accent-dark';
+
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-        live ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
+        live ? active : idle
       }`}
       title={live ? 'Ζωντανή ενημέρωση ενεργή' : 'Ανανέωση κάθε 60"'}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          live ? 'animate-pulse bg-emerald-500' : 'bg-zinc-400'
+          live ? 'animate-live-dot bg-accent' : 'bg-current opacity-50'
         }`}
       />
       LIVE

@@ -61,7 +61,7 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         animation: 'shift',
-        headerStyle: { backgroundColor: colors.accent },
+        headerStyle: { backgroundColor: colors.ink },
         headerShadowVisible: false,
         headerTitleAlign: 'center',
         headerTitle: () => <BrandLogo height={34} />,

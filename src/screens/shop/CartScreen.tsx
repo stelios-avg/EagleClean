@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -10,6 +9,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { PillButton, SubpageHeader, Subtitle } from '../../components/ui';
+import { PressableScale } from '../../components/PressableScale';
 import { formatEuros } from '../../constants/payments';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -35,7 +35,7 @@ function CartRow({ item }: { item: CartItem }) {
         </Text>
       </View>
       <View style={styles.stepper}>
-        <Pressable
+        <PressableScale
           onPress={() => setQuantity(product.id, quantity - 1)}
           style={styles.stepBtn}
           hitSlop={6}
@@ -43,13 +43,13 @@ function CartRow({ item }: { item: CartItem }) {
           <Ionicons
             name={quantity === 1 ? 'trash-outline' : 'remove'}
             size={17}
-            color={colors.textOnDark}
+            color={colors.textOnAccent}
           />
-        </Pressable>
+        </PressableScale>
         <Text style={styles.stepValue}>{quantity}</Text>
-        <Pressable onPress={() => add(product)} style={styles.stepBtn} hitSlop={6}>
-          <Ionicons name="add" size={17} color={colors.textOnDark} />
-        </Pressable>
+        <PressableScale onPress={() => add(product)} style={styles.stepBtn} hitSlop={6}>
+          <Ionicons name="add" size={17} color={colors.textOnAccent} />
+        </PressableScale>
       </View>
       <Text style={styles.rowTotal}>
         {formatEuros(product.price_cents * quantity)}

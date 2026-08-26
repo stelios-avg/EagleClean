@@ -8,6 +8,46 @@ export type ServiceCategory = 'my-home' | 'cleaning-crew';
 export type HomeSize = 'Studio' | '1 Bedroom' | '2 Bedroom' | '3 Bedroom';
 export type CrewService = 'Deep Cleaning' | 'Events';
 
+export const HOME_SIZES: HomeSize[] = ['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom'];
+export const CREW_SERVICES: CrewService[] = ['Deep Cleaning', 'Events'];
+
+export function isHomeSize(option: HomeSize | CrewService): option is HomeSize {
+  return (HOME_SIZES as string[]).includes(option);
+}
+
+export function categoryFor(option: HomeSize | CrewService): ServiceCategory {
+  return isHomeSize(option) ? 'my-home' : 'cleaning-crew';
+}
+
+/** Studio is 0 bedrooms; 3+ bedrooms use the 3 Bedroom rate. */
+export function homeSizeFromRooms(rooms: number): HomeSize {
+  if (rooms <= 0) {
+    return 'Studio';
+  }
+  if (rooms === 1) {
+    return '1 Bedroom';
+  }
+  if (rooms === 2) {
+    return '2 Bedroom';
+  }
+  return '3 Bedroom';
+}
+
+export function roomsFromOption(option: HomeSize | CrewService): number {
+  switch (option) {
+    case 'Studio':
+      return 0;
+    case '1 Bedroom':
+      return 1;
+    case '2 Bedroom':
+      return 2;
+    case '3 Bedroom':
+      return 3;
+    default:
+      return 2;
+  }
+}
+
 export type BookingSelection = {
   /** ISO date string, e.g. "2026-08-01" */
   date: string;
@@ -15,6 +55,8 @@ export type BookingSelection = {
   timeSlot: string;
   category: ServiceCategory;
   option: HomeSize | CrewService;
+  /** Bedroom count used for the quote (Studio = 0). */
+  rooms: number;
   /** Size of the home/venue in m² — mandatory before continuing. */
   squareMeters: number;
   /** Hours added on top of the base slot via the + stepper. */
@@ -23,6 +65,8 @@ export type BookingSelection = {
 
 /** Mandatory customer details collected before payment. */
 export type ContactDetails = {
+  name: string;
+  /** Optional for guest checkout. */
   email: string;
   phone: string;
   address: string;
@@ -31,16 +75,11 @@ export type ContactDetails = {
 // ---------- Param lists (one per navigator) ----------
 
 export type BookingStackParamList = {
-  /** `preselected` skips the ServiceSelection step (set when a category is tapped on Home). */
-  Calendar: { preselected?: HomeSize | CrewService } | undefined;
-  /**
-   * The final time range depends on the service duration, so before a
-   * service is chosen we carry the raw start hour + extras instead of a slot.
-   */
-  ServiceSelection: {
-    date: string;
-    startHour: number;
-    extraHours: number;
+  /** First step: rooms + sqm → indicative "from" price, then calendar. */
+  Quote: { option?: HomeSize | CrewService } | undefined;
+  Calendar: {
+    option: HomeSize | CrewService;
+    rooms: number;
     squareMeters: number;
   };
   BookingSummary: BookingSelection;
