@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { FormInput, Heading, PillButton, Subtitle } from '../../components/ui';
+import { UseMyLocationButton } from '../../components/UseMyLocationButton';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
+import { geocodeAddress } from '../../services/deviceAddress';
 import { getMyProfile, saveContactInfo } from '../../services/profile';
 import { EMAIL_RE, PHONE_RE } from '../../utils/contact';
 import { colors, spacing } from '../../theme';
@@ -32,6 +34,8 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -48,6 +52,8 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
         setEmail(profile.email ?? session?.email ?? '');
         setPhone(profile.phone ?? '');
         setAddress(profile.address ?? '');
+        setLatitude(profile.address_lat);
+        setLongitude(profile.address_lng);
       })
       .catch(() => {
         if (active) {
@@ -77,16 +83,33 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
     if (!allValid) {
       return;
     }
-    void saveContactInfo({ fullName: name, phone, address }).catch(() => {});
-    navigation.navigate('Payment', {
-      ...route.params,
-      contact: {
-        name: name.trim(),
-        email: emailTrimmed,
-        phone: phone.trim(),
-        address: address.trim(),
-      },
-    });
+    void (async () => {
+      let lat = latitude;
+      let lng = longitude;
+      if (lat == null || lng == null) {
+        const pin = await geocodeAddress(address);
+        lat = pin?.latitude ?? null;
+        lng = pin?.longitude ?? null;
+      }
+      void saveContactInfo({
+        fullName: name,
+        phone,
+        address,
+        latitude: lat,
+        longitude: lng,
+      }).catch(() => {});
+      navigation.navigate('Payment', {
+        ...route.params,
+        contact: {
+          name: name.trim(),
+          email: emailTrimmed,
+          phone: phone.trim(),
+          address: address.trim(),
+          latitude: lat,
+          longitude: lng,
+        },
+      });
+    })();
   };
 
   if (loading) {
@@ -128,9 +151,20 @@ export default function ContactDetailsScreen({ navigation, route }: Props) {
           <FormInput
             label={t('contact.address')}
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(text) => {
+              setAddress(text);
+              setLatitude(null);
+              setLongitude(null);
+            }}
             placeholder={t('contact.addressPlaceholder')}
             error={touched && !addressValid ? t('contact.addressError') : undefined}
+          />
+          <UseMyLocationButton
+            onLocated={({ address: next, latitude: lat, longitude: lng }) => {
+              setAddress(next);
+              setLatitude(lat);
+              setLongitude(lng);
+            }}
           />
           <FormInput
             label={t('contact.emailOptional')}

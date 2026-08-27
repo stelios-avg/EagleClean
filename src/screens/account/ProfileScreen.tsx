@@ -12,8 +12,10 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormInput, PillButton, SubpageHeader, Subtitle } from '../../components/ui';
+import { UseMyLocationButton } from '../../components/UseMyLocationButton';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
+import { geocodeAddress } from '../../services/deviceAddress';
 import { getMyProfile, updateMyProfile } from '../../services/profile';
 import { colors, fonts, spacing } from '../../theme';
 import type { RootStackParamList } from '../../navigation/types';
@@ -30,6 +32,8 @@ export default function ProfileScreen({ navigation }: Props) {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   useEffect(() => {
     getMyProfile()
@@ -37,6 +41,8 @@ export default function ProfileScreen({ navigation }: Props) {
         setFullName(profile.full_name ?? '');
         setPhone(profile.phone ?? '');
         setAddress(profile.address ?? '');
+        setLatitude(profile.address_lat);
+        setLongitude(profile.address_lng);
       })
       .catch((e) => Alert.alert(t('auth.errorTitle'), (e as Error).message))
       .finally(() => setLoading(false));
@@ -45,7 +51,14 @@ export default function ProfileScreen({ navigation }: Props) {
   const save = async () => {
     setSaving(true);
     try {
-      await updateMyProfile({ fullName, phone, address });
+      let lat = latitude;
+      let lng = longitude;
+      if (lat == null || lng == null) {
+        const pin = await geocodeAddress(address);
+        lat = pin?.latitude ?? null;
+        lng = pin?.longitude ?? null;
+      }
+      await updateMyProfile({ fullName, phone, address, latitude: lat, longitude: lng });
       Alert.alert(t('profile.savedTitle'), t('profile.savedBody'), [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -102,11 +115,22 @@ export default function ProfileScreen({ navigation }: Props) {
             <FormInput
               label={t('contact.address')}
               value={address}
-              onChangeText={setAddress}
+              onChangeText={(text) => {
+                setAddress(text);
+                setLatitude(null);
+                setLongitude(null);
+              }}
               placeholder={t('contact.addressPlaceholder')}
               autoComplete="street-address"
               textContentType="fullStreetAddress"
               icon="home-outline"
+            />
+            <UseMyLocationButton
+              onLocated={({ address: next, latitude: lat, longitude: lng }) => {
+                setAddress(next);
+                setLatitude(lat);
+                setLongitude(lng);
+              }}
             />
             <View style={{ height: 8 }} />
             <PillButton

@@ -8,6 +8,7 @@ import type { Booking, BookingStatus, ServiceCategory } from '@/lib/types';
 import { logout } from '../login/actions';
 import { BookingRowActions } from './booking-row-actions';
 import { LiveRefresh } from './live-refresh';
+import { BookingMap } from '@/components/booking-map';
 
 const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   'my-home': 'Σπίτι',
@@ -296,6 +297,14 @@ export default async function BookingsPage({
                   <p className="text-2xl font-extrabold tracking-tight text-ink">
                     {euros(b.amount_cents)}
                   </p>
+                </div>
+
+                <div className="mt-3 max-w-md">
+                  <BookingMap
+                    address={b.contact_address}
+                    lat={b.contact_lat}
+                    lng={b.contact_lng}
+                  />
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">

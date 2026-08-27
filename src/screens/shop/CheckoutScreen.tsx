@@ -13,11 +13,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FormInput, PillButton, SubpageHeader, Subtitle } from '../../components/ui';
+import { UseMyLocationButton } from '../../components/UseMyLocationButton';
 import { formatEuros } from '../../constants/payments';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { getMyProfile, saveContactInfo } from '../../services/profile';
+import { geocodeAddress } from '../../services/deviceAddress';
 import { createProductOrder } from '../../services/shop';
 import { EMAIL_RE, PHONE_RE } from '../../utils/contact';
 import { colors, fonts, radii, spacing } from '../../theme';
@@ -41,6 +43,8 @@ export default function CheckoutScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -53,6 +57,8 @@ export default function CheckoutScreen({ navigation }: Props) {
         setEmail(profile.email ?? session?.email ?? '');
         setPhone(profile.phone ?? '');
         setAddress(profile.address ?? '');
+        setLatitude(profile.address_lat);
+        setLongitude(profile.address_lng);
       })
       .catch(() => {
         if (active) {
@@ -98,8 +104,15 @@ export default function CheckoutScreen({ navigation }: Props) {
         })),
         contact
       );
+      let lat = latitude;
+      let lng = longitude;
+      if (lat == null || lng == null) {
+        const pin = await geocodeAddress(address);
+        lat = pin?.latitude ?? null;
+        lng = pin?.longitude ?? null;
+      }
       // Remember the details for next time; ignore failures.
-      void saveContactInfo({ phone, address }).catch(() => {});
+      void saveContactInfo({ phone, address, latitude: lat, longitude: lng }).catch(() => {});
       clear();
       Alert.alert(t('shop.orderPlacedTitle'), t('shop.orderPlacedBody'), [
         {
@@ -184,9 +197,20 @@ export default function CheckoutScreen({ navigation }: Props) {
               <FormInput
                 label={t('contact.address')}
                 value={address}
-                onChangeText={setAddress}
+                onChangeText={(text) => {
+                  setAddress(text);
+                  setLatitude(null);
+                  setLongitude(null);
+                }}
                 placeholder={t('contact.addressPlaceholder')}
                 error={touched && !addressValid ? t('contact.addressError') : undefined}
+              />
+              <UseMyLocationButton
+                onLocated={({ address: next, latitude: lat, longitude: lng }) => {
+                  setAddress(next);
+                  setLatitude(lat);
+                  setLongitude(lng);
+                }}
               />
             </View>
 

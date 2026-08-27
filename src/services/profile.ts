@@ -28,6 +28,8 @@ export async function updateMyProfile(input: {
   fullName: string;
   phone: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }): Promise<void> {
   const {
     data: { user },
@@ -44,6 +46,8 @@ export async function updateMyProfile(input: {
       full_name: input.fullName.trim() || null,
       phone: input.phone.trim() || null,
       address: input.address.trim() || null,
+      address_lat: input.latitude ?? null,
+      address_lng: input.longitude ?? null,
     })
     .eq('id', user.id);
 
@@ -60,6 +64,8 @@ export async function saveContactInfo(input: {
   fullName?: string;
   phone: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }): Promise<void> {
   const {
     data: { user },
@@ -75,6 +81,8 @@ export async function saveContactInfo(input: {
       ...(input.fullName != null ? { full_name: input.fullName.trim() || null } : {}),
       phone: input.phone.trim() || null,
       address: input.address.trim() || null,
+      ...(input.latitude !== undefined ? { address_lat: input.latitude } : {}),
+      ...(input.longitude !== undefined ? { address_lng: input.longitude } : {}),
     })
     .eq('id', user.id);
 

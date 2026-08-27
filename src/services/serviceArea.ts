@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { requestDeviceCoords } from './deviceAddress';
 
 // Center of Nicosia (Plateia Eleftherias area). The radius covers the
 // greater urban area: Strovolos, Lakatamia, Latsia, Geri, Tseri, Egkomi.
@@ -30,29 +31,14 @@ function distanceKm(
  * Bookings are only accepted from within it.
  */
 export async function checkServiceArea(): Promise<ServiceAreaStatus> {
-  try {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      return 'permission-denied';
-    }
-
-    // Last known fix is instant. A fresh GPS read can hang indoors, so
-    // cap it at 8s and prefer a coarser (faster) accuracy.
-    const lastKnown = await Location.getLastKnownPositionAsync({
-      maxAge: 30 * 60 * 1000,
-    });
-    const position =
-      lastKnown ??
-      (await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Location request timed out')), 8000)
-        ),
-      ]));
-
-    const km = distanceKm(position.coords, NICOSIA_CENTER);
-    return km <= SERVICE_RADIUS_KM ? 'inside' : 'outside';
-  } catch {
-    return 'unavailable';
+  const located = await requestDeviceCoords({
+    accuracy: Location.Accuracy.Low,
+    lastKnownMaxAgeMs: 30 * 60 * 1000,
+    timeoutMs: 8000,
+  });
+  if (!located.ok) {
+    return located.reason;
   }
+  const km = distanceKm(located.coords, NICOSIA_CENTER);
+  return km <= SERVICE_RADIUS_KM ? 'inside' : 'outside';
 }

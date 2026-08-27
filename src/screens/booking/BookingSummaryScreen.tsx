@@ -77,7 +77,9 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
         profile.full_name,
         profile.email ?? session?.email,
         profile.phone,
-        profile.address
+        profile.address,
+        profile.address_lat,
+        profile.address_lng
       );
     } catch {
       // Profile unavailable — fall back to asking for details.

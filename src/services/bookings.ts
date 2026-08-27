@@ -30,6 +30,8 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
     contact_email: input.contact.email.trim() || null,
     contact_phone: input.contact.phone.trim(),
     contact_address: input.contact.address.trim(),
+    contact_lat: input.contact.latitude ?? null,
+    contact_lng: input.contact.longitude ?? null,
     square_meters: input.squareMeters,
     extra_hours: input.extraHours,
     amount_cents: bookingGrandTotalCents(

@@ -162,6 +162,11 @@ const el = {
   'contact.address': 'Διεύθυνση',
   'contact.addressPlaceholder': 'Οδός, αριθμός, πόλη',
   'contact.addressError': 'Συμπλήρωσε τη διεύθυνσή σου',
+  'contact.useLocation': 'Χρήση τοποθεσίας',
+  'contact.locating': 'Εύρεση θέσης…',
+  'contact.locationFailed':
+    'Δεν μπορέσαμε να βρούμε τη θέση σου. Βεβαιώσου ότι το GPS είναι ανοιχτό και δοκίμασε ξανά.',
+  'contact.currentLocation': 'Τρέχουσα θέση, Λευκωσία',
   'contact.continue': 'Συνέχεια στην πληρωμή',
 
   // Payment
@@ -485,6 +490,11 @@ const en: Record<TranslationKey, string> = {
   'contact.address': 'Address',
   'contact.addressPlaceholder': 'Street, number, city',
   'contact.addressError': 'Enter your address',
+  'contact.useLocation': 'Use my location',
+  'contact.locating': 'Finding location…',
+  'contact.locationFailed':
+    "We couldn't detect your position. Make sure GPS is on and try again.",
+  'contact.currentLocation': 'Current location, Nicosia',
   'contact.continue': 'Continue to payment',
 
   'payment.title': 'Payment',

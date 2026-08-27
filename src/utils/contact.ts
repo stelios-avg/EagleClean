@@ -6,6 +6,8 @@ export type ContactDetails = {
   email: string;
   phone: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function validEmailOrEmpty(email: string): boolean {
@@ -21,7 +23,9 @@ export function completeContactFrom(
   name: string | null | undefined,
   email: string | null | undefined,
   phone: string | null | undefined,
-  address: string | null | undefined
+  address: string | null | undefined,
+  latitude?: number | null,
+  longitude?: number | null
 ): ContactDetails | null {
   const n = (name ?? '').trim();
   const e = (email ?? '').trim();
@@ -29,7 +33,7 @@ export function completeContactFrom(
   const a = (address ?? '').trim();
 
   if (n.length >= 2 && PHONE_RE.test(p) && a.length >= 5 && validEmailOrEmpty(e)) {
-    return { name: n, email: e, phone: p, address: a };
+    return { name: n, email: e, phone: p, address: a, latitude, longitude };
   }
   return null;
 }

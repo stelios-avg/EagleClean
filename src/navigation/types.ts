@@ -82,6 +82,8 @@ export type ContactDetails = {
   email: string;
   phone: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 // ---------- Param lists (one per navigator) ----------

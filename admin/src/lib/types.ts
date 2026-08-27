@@ -19,6 +19,9 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           phone: string | null;
+          address: string | null;
+          address_lat: number | null;
+          address_lng: number | null;
           role: ProfileRole;
           push_token: string | null;
           created_at: string;
@@ -51,6 +54,8 @@ export type Database = {
           contact_email: string | null;
           contact_phone: string;
           contact_address: string;
+          contact_lat: number | null;
+          contact_lng: number | null;
           square_meters: number | null;
           extra_hours: number;
           supplies: {
