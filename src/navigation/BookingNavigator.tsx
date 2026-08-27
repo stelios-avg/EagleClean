@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import QuoteScreen from '../screens/booking/QuoteScreen';
 import CalendarScreen from '../screens/booking/CalendarScreen';
 import BookingSummaryScreen from '../screens/booking/BookingSummaryScreen';
+import BookingSuppliesScreen from '../screens/booking/BookingSuppliesScreen';
 import ContactDetailsScreen from '../screens/booking/ContactDetailsScreen';
 import PaymentScreen from '../screens/booking/PaymentScreen';
 import ConfirmationScreen from '../screens/booking/ConfirmationScreen';
@@ -13,9 +14,8 @@ import type { BookingStackParamList } from './types';
 const Stack = createNativeStackNavigator<BookingStackParamList>();
 
 /**
- * Sequential booking flow: Quote (rooms + sqm) -> Calendar -> Summary
- * -> Contact Details (mandatory) -> Payment. Selections accumulate in
- * route params. Auth is enforced at the Summary step.
+ * Sequential booking flow: Quote -> Calendar -> Summary (optional supplies)
+ * -> Contact Details -> Payment.
  */
 export default function BookingNavigator() {
   const { t } = useI18n();
@@ -46,6 +46,11 @@ export default function BookingNavigator() {
         name="BookingSummary"
         component={BookingSummaryScreen}
         options={{ title: t('nav.summary') }}
+      />
+      <Stack.Screen
+        name="BookingSupplies"
+        component={BookingSuppliesScreen}
+        options={{ title: t('nav.supplies') }}
       />
       <Stack.Screen
         name="ContactDetails"

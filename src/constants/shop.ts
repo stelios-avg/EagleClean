@@ -10,8 +10,10 @@ export type ShopCategorySlug =
   | 'equipment'
   | 'personal-care'
   | 'dispensers'
-  | 'beverages'
   | 'household';
+
+/** Hidden from the shop (food/drinks and personal care). */
+export const HIDDEN_SHOP_CATEGORIES = ['beverages', 'personal-care'] as const;
 
 export type ShopCategory = {
   slug: ShopCategorySlug;
@@ -29,7 +31,5 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   { slug: 'bins', icon: 'trash-outline' },
   { slug: 'equipment', icon: 'cart-outline' },
   { slug: 'dispensers', icon: 'water-outline' },
-  { slug: 'personal-care', icon: 'sparkles-outline' },
   { slug: 'household', icon: 'home-outline' },
-  { slug: 'beverages', icon: 'cafe-outline' },
 ];

@@ -61,6 +61,17 @@ export function isSlotTaken(
   return booked.some((b) => startHour < b.end_hour && end > b.start_hour);
 }
 
+/** Same-day slots whose start time has already passed are not bookable. */
+export function isSlotStartPassed(
+  isoDate: string,
+  startHour: number,
+  now = new Date()
+): boolean {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const start = new Date(year, month - 1, day, startHour, 0, 0, 0);
+  return now.getTime() >= start.getTime();
+}
+
 /**
  * Extra-hours cap that also respects the next booking of the day, so an
  * extended visit never runs into someone else's slot.

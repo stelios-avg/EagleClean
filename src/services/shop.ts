@@ -1,16 +1,24 @@
 import catalog from '../data/products.json';
+import { HIDDEN_SHOP_CATEGORIES } from '../constants/shop';
 import { supabase } from '../lib/supabase';
 import type { ContactDetails } from '../navigation/types';
 import type { Product, ProductOrder, ProductOrderItem } from '../types/database';
 
-type CatalogRow = Omit<Product, 'created_at'>;
+type CatalogRow = Omit<Product, 'created_at'> & { image?: string };
 
 /** Instant local catalog — browsing never waits on the network. */
 function localProducts(category: string): Product[] {
+  if ((HIDDEN_SHOP_CATEGORIES as readonly string[]).includes(category)) {
+    return [];
+  }
   return (catalog as CatalogRow[])
     .filter((p) => p.category === category && p.active)
     .sort((a, b) => a.sort - b.sort)
-    .map((p) => ({ ...p, created_at: '' }));
+    .map(({ image: _image, ...p }) => ({ ...p, created_at: '' }));
+}
+
+export function catalogProducts(category: string): Product[] {
+  return localProducts(category);
 }
 
 export async function listProductsByCategory(category: string): Promise<Product[]> {

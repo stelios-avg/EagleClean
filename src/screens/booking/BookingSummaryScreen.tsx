@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Heading, PillButton, Subtitle } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import { EXTRA_HOUR_PRICE_CENTS } from '../../constants/booking';
-import { bookingTotalCents, formatEuros } from '../../constants/payments';
+import {
+  bookingGrandTotalCents,
+  bookingTotalCents,
+  formatEuros,
+  suppliesTotalCents,
+} from '../../constants/payments';
 import { getMyProfile } from '../../services/profile';
 import { completeContactFrom } from '../../utils/contact';
 import { colors, fonts, radii, spacing } from '../../theme';
-import type { BookingStackParamList, RootStackParamList } from '../../navigation/types';
+import type {
+  BookingSelection,
+  BookingStackParamList,
+  BookingSupply,
+  RootStackParamList,
+} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingSummary'>;
 
@@ -34,23 +44,29 @@ function SummaryRow({
   );
 }
 
+function supplyName(item: BookingSupply, locale: string) {
+  const name = locale === 'el' ? item.nameEl : item.nameEn;
+  return item.variantLabel ? `${name} · ${item.variantLabel}` : name;
+}
+
 /**
- * Review the quote, then continue to contact details. Guests can finish
- * without an account; signed-in customers skip contact if the profile is complete.
+ * Review the quote, optionally add marketplace supplies, then continue.
  */
 export default function BookingSummaryScreen({ navigation, route }: Props) {
   const { isAuthenticated, session } = useAuth();
   const { t, locale } = useI18n();
   const [checking, setChecking] = useState(false);
-  const { date, timeSlot, category, option, rooms, squareMeters, extraHours } =
+  const { date, timeSlot, category, option, rooms, squareMeters, extraHours, supplies } =
     route.params;
-  const amount = bookingTotalCents(option, extraHours, squareMeters, rooms);
+  const cleaningAmount = bookingTotalCents(option, extraHours, squareMeters, rooms);
+  const suppliesAmount = suppliesTotalCents(supplies ?? []);
+  const amount = bookingGrandTotalCents(option, extraHours, squareMeters, rooms, supplies ?? []);
+  const choseSupplies = supplies !== undefined;
 
-  // Returning customers with a complete profile (name, phone, address)
-  // skip the contact-details step and go straight to payment.
-  const continueBooking = async () => {
+  const goNext = async (nextSupplies: BookingSupply[]) => {
+    const params: BookingSelection = { ...route.params, supplies: nextSupplies };
     if (!isAuthenticated) {
-      navigation.navigate('ContactDetails', route.params);
+      navigation.navigate('ContactDetails', params);
       return;
     }
     setChecking(true);
@@ -68,9 +84,9 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
     }
     setChecking(false);
     if (contact) {
-      navigation.navigate('Payment', { ...route.params, contact });
+      navigation.navigate('Payment', { ...params, contact });
     } else {
-      navigation.navigate('ContactDetails', route.params);
+      navigation.navigate('ContactDetails', params);
     }
   };
 
@@ -85,7 +101,7 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <View>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Heading>{t('summary.title')}</Heading>
         <Subtitle>{t('summary.subtitle')}</Subtitle>
 
@@ -104,9 +120,7 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
             icon="bed-outline"
             label={t('summary.rooms')}
             value={
-              rooms === 0
-                ? t('service.Studio').replace(/\n/g, '')
-                : String(rooms)
+              rooms === 0 ? t('service.Studio').replace(/\n/g, '') : String(rooms)
             }
           />
           <SummaryRow icon="calendar-outline" label={t('summary.day')} value={prettyDate} />
@@ -129,18 +143,73 @@ export default function BookingSummaryScreen({ navigation, route }: Props) {
           ) : null}
           <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{t('summary.total')}</Text>
-            <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
+            <Text style={styles.subtotalLabel}>{t('summary.cleaning')}</Text>
+            <Text style={styles.subtotalValue}>{formatEuros(cleaningAmount)}</Text>
           </View>
         </View>
-      </View>
+
+        <View style={styles.card}>
+          <Text style={styles.suppliesTitle}>{t('summary.suppliesTitle')}</Text>
+          {choseSupplies && (supplies?.length ?? 0) > 0 ? (
+            <>
+              {supplies!.map((item) => (
+                <View key={item.productId} style={styles.supplyRow}>
+                  <Text style={styles.supplyName} numberOfLines={2}>
+                    {item.quantity}× {supplyName(item, locale)}
+                  </Text>
+                  <Text style={styles.supplyPrice}>
+                    {formatEuros(item.unitPriceCents * item.quantity)}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.totalRow}>
+                <Text style={styles.subtotalLabel}>{t('summary.supplies')}</Text>
+                <Text style={styles.subtotalValue}>{formatEuros(suppliesAmount)}</Text>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.suppliesHint}>
+              {choseSupplies ? t('summary.suppliesNone') : t('summary.suppliesHint')}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>{t('summary.total')}</Text>
+          <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
+        </View>
+      </ScrollView>
 
       <View style={styles.footer}>
-        <PillButton
-          label={checking ? t('auth.pleaseWait') : t('summary.continue')}
-          onPress={continueBooking}
-          disabled={checking}
-        />
+        {choseSupplies ? (
+          <>
+            <PillButton
+              label={checking ? t('auth.pleaseWait') : t('summary.continue')}
+              onPress={() => void goNext(supplies ?? [])}
+              disabled={checking}
+            />
+            <PillButton
+              label={t('summary.changeSupplies')}
+              variant="outline"
+              onPress={() => navigation.navigate('BookingSupplies', route.params)}
+              disabled={checking}
+            />
+          </>
+        ) : (
+          <>
+            <PillButton
+              label={t('summary.addSupplies')}
+              onPress={() => navigation.navigate('BookingSupplies', route.params)}
+              disabled={checking}
+            />
+            <PillButton
+              label={checking ? t('auth.pleaseWait') : t('summary.withoutSupplies')}
+              variant="outline"
+              onPress={() => void goNext([])}
+              disabled={checking}
+            />
+          </>
+        )}
         {!isAuthenticated ? (
           <PillButton
             label={t('summary.orLogin')}
@@ -157,16 +226,19 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scroll: {
     padding: spacing.screen,
-    justifyContent: 'space-between',
+    paddingBottom: 16,
+    gap: 8,
   },
   card: {
-    marginTop: 18,
+    marginTop: 10,
     borderRadius: radii.card,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 20,
-    gap: 16,
+    gap: 14,
   },
   row: {
     flexDirection: 'row',
@@ -203,18 +275,67 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  totalLabel: {
+  subtotalLabel: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
+  },
+  subtotalValue: {
     fontSize: 16,
     fontFamily: fonts.bold,
     color: colors.textPrimary,
   },
-  totalValue: {
-    fontSize: 24,
+  suppliesTitle: {
+    fontSize: 16,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
   },
+  suppliesHint: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  supplyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  supplyName: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+  supplyPrice: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
+  },
+  totalCard: {
+    marginTop: 10,
+    borderRadius: radii.card,
+    backgroundColor: colors.ink,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.textOnDark,
+  },
+  totalValue: {
+    fontSize: 24,
+    fontFamily: fonts.extraBold,
+    color: colors.textOnDark,
+  },
   footer: {
-    gap: 12,
-    paddingBottom: 10,
+    gap: 10,
+    paddingHorizontal: spacing.screen,
+    paddingBottom: 16,
+    paddingTop: 8,
   },
 });

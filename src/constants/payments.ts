@@ -2,12 +2,12 @@ import { isHomeSize, type CrewService, type HomeSize } from '../navigation/types
 import { EXTRA_HOUR_PRICE_CENTS } from './booking';
 
 /**
- * Stripe publishable key (test mode). Safe to ship in the client.
- * Replace with your real pk_test_... / pk_live_... key.
+ * Stripe publishable key (test or live). Safe to ship in the client.
  * The secret key NEVER goes in the app — it lives in the Supabase Edge
- * Function that creates PaymentIntents (Phase 2).
+ * Function `create-payment-intent`.
  */
-export const STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_ME';
+export const STRIPE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
 
 /** Must match the merchantIdentifier in app.json and your Apple Developer account. */
 export const APPLE_MERCHANT_ID = 'merchant.com.eagleclean.app';
@@ -67,4 +67,20 @@ export function bookingTotalCents(
   rooms?: number
 ): number {
   return indicativePriceCents(option, squareMeters, rooms) + extraHours * EXTRA_HOUR_PRICE_CENTS;
+}
+
+export function suppliesTotalCents(
+  supplies: { unitPriceCents: number; quantity: number }[]
+): number {
+  return supplies.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
+}
+
+export function bookingGrandTotalCents(
+  option: HomeSize | CrewService,
+  extraHours: number,
+  squareMeters: number,
+  rooms?: number,
+  supplies: { unitPriceCents: number; quantity: number }[] = []
+): number {
+  return bookingTotalCents(option, extraHours, squareMeters, rooms) + suppliesTotalCents(supplies);
 }

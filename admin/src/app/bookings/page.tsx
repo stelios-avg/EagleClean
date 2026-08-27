@@ -319,6 +319,22 @@ export default async function BookingsPage({
                   </span>
                 </div>
 
+                {(Array.isArray(b.supplies) ? b.supplies : []).length > 0 ? (
+                  <div className="mt-3 rounded-2xl bg-accent-soft/60 px-3 py-2.5">
+                    <p className="text-[11px] font-bold tracking-wide text-accent-dark">
+                      ΥΛΙΚΑ
+                    </p>
+                    <ul className="mt-1 space-y-0.5 text-xs text-zinc-700">
+                      {(Array.isArray(b.supplies) ? b.supplies : []).map((item) => (
+                        <li key={`${item.product_id}-${item.name_el}`}>
+                          {item.quantity}× {item.name_el}
+                          {item.variant_label ? ` · ${item.variant_label}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
                 <div className="mt-4 border-t border-zinc-100 pt-4">
                   <BookingRowActions
                     key={`${b.id}-${b.status}`}

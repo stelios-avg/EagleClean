@@ -1,5 +1,5 @@
 import type { BookedRange } from '../constants/booking';
-import { bookingTotalCents } from '../constants/payments';
+import { bookingGrandTotalCents } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { BookingSelection, ContactDetails } from '../navigation/types';
 import type { Booking, BookingStatus } from '../types/database';
@@ -16,6 +16,8 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
     data: { user },
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
 
+  const supplies = input.supplies ?? [];
+
   const row = {
     user_id: user?.id ?? null,
     service_date: input.date,
@@ -28,12 +30,21 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
     contact_address: input.contact.address.trim(),
     square_meters: input.squareMeters,
     extra_hours: input.extraHours,
-    amount_cents: bookingTotalCents(
+    amount_cents: bookingGrandTotalCents(
       input.option,
       input.extraHours,
       input.squareMeters,
-      input.rooms
+      input.rooms,
+      supplies
     ),
+    supplies: supplies.map((item) => ({
+      product_id: item.productId,
+      name_el: item.nameEl,
+      name_en: item.nameEn,
+      variant_label: item.variantLabel,
+      unit_price_cents: item.unitPriceCents,
+      quantity: item.quantity,
+    })),
     status: input.status ?? 'paid',
     payment_intent_id: input.paymentIntentId ?? null,
   };

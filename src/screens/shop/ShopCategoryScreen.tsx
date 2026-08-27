@@ -9,6 +9,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ProductThumb } from '../../components/ProductThumb';
 import { SubpageHeader } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
 import { formatEuros } from '../../constants/payments';
@@ -29,6 +30,7 @@ function ProductRow({ product }: { product: Product }) {
 
   return (
     <View style={styles.row}>
+      <ProductThumb productId={product.id} />
       <View style={styles.rowInfo}>
         <Text style={styles.rowName}>{name}</Text>
         <View style={styles.rowMeta}>

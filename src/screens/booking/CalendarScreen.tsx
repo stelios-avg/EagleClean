@@ -16,6 +16,7 @@ import { PressableScale } from '../../components/PressableScale';
 import {
   BASE_DURATION_HOURS,
   getSlotStartHours,
+  isSlotStartPassed,
   isSlotTaken,
   maxExtraHoursWithBookings,
   slotLabel,
@@ -96,8 +97,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() + 1);
+  const minDate = today;
 
   const [monthCursor, setMonthCursor] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1)
@@ -197,12 +197,21 @@ export default function CalendarScreen({ navigation, route }: Props) {
   }, [maxExtra]);
 
   const totalHours = duration + extraHours;
+  const selectedIso = selected ? toISODate(selected) : null;
   const allSlotsTaken =
     !loadingSlots &&
-    slotStartHours.every((hour) => isSlotTaken(hour, duration, bookedRanges));
+    slotStartHours.every(
+      (hour) =>
+        isSlotTaken(hour, duration, bookedRanges) ||
+        (selectedIso != null && isSlotStartPassed(selectedIso, hour))
+    );
 
   const handleContinue = () => {
     if (!selected || startHour === null) {
+      return;
+    }
+    if (isSlotStartPassed(toISODate(selected), startHour)) {
+      setStartHour(null);
       return;
     }
     navigation.navigate('BookingSummary', {
@@ -387,7 +396,9 @@ export default function CalendarScreen({ navigation, route }: Props) {
             ) : (
               <View style={styles.chipWrap}>
                 {slotStartHours.map((hour) => {
-                  const taken = isSlotTaken(hour, duration, bookedRanges);
+                  const taken =
+                    isSlotTaken(hour, duration, bookedRanges) ||
+                    isSlotStartPassed(toISODate(selected), hour);
                   return (
                     <Chip
                       key={hour}

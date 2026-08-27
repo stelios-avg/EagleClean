@@ -2,6 +2,7 @@
   "expo": {
     "name": "EagleClean",
     "slug": "EagleClean",
+    "scheme": "eagleclean",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

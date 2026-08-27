@@ -130,6 +130,17 @@ export default function MyBookingsScreen({ navigation }: Props) {
             </Text>
           </View>
         ) : null}
+        {(item.supplies?.length ?? 0) > 0 ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="cube-outline" size={15} color={colors.textSecondary} />
+            <Text style={styles.metaText}>
+              {t('bookings.supplies')} ·{' '}
+              {item.supplies
+                .map((s) => `${s.quantity}× ${locale === 'el' ? s.name_el : s.name_en}`)
+                .join(', ')}
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.cardBottom}>
           <Text style={styles.amount}>{formatEuros(item.amount_cents)}</Text>

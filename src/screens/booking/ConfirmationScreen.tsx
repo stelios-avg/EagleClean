@@ -67,6 +67,11 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
           <Text style={styles.bookingMeta}>
             {contact.name} · {t(`service.${option}`)} · {contact.address}
           </Text>
+          {(route.params.supplies?.length ?? 0) > 0 ? (
+            <Text style={styles.bookingMeta}>
+              {t('bookings.supplies')} · {route.params.supplies!.length}
+            </Text>
+          ) : null}
         </View>
       </View>
 

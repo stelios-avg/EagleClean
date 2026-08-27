@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
@@ -29,8 +31,13 @@ export default function App() {
 
   return (
     <StripeProvider
-      publishableKey={STRIPE_PUBLISHABLE_KEY}
+      publishableKey={STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder'}
       merchantIdentifier={APPLE_MERCHANT_ID}
+      urlScheme={
+        Constants.appOwnership === 'expo'
+          ? Linking.createURL('/--/')
+          : Linking.createURL('')
+      }
     >
       <LanguageProvider>
         <AuthProvider>

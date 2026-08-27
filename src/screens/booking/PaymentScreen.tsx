@@ -1,57 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import {
-  PlatformPay,
-  PlatformPayButton,
-  confirmPlatformPayPayment,
-  isPlatformPaySupported,
-} from '@stripe/stripe-react-native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { Heading, PillButton, Subtitle } from '../../components/ui';
 import {
   CURRENCY_CODE,
   MERCHANT_COUNTRY_CODE,
   MERCHANT_NAME,
-  bookingTotalCents,
+  STRIPE_PUBLISHABLE_KEY,
+  bookingGrandTotalCents,
   formatEuros,
 } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
 import { createBooking } from '../../services/bookings';
+import { createPaymentIntent } from '../../services/payments';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { BookingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Payment'>;
 
-/**
- * Phase 2: replace with a Supabase Edge Function that creates a Stripe
- * PaymentIntent server-side (with the booking + contact details in
- * metadata) and returns its client_secret.
- */
-async function fetchPaymentIntentClientSecret(_amount: number): Promise<string> {
-  throw new Error(
-    'Payment backend not connected yet. A Supabase Edge Function will create the PaymentIntent in Phase 2.'
-  );
-}
-
 export default function PaymentScreen({ navigation, route }: Props) {
   const { t } = useI18n();
-  const amount = bookingTotalCents(
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const amount = bookingGrandTotalCents(
     route.params.option,
     route.params.extraHours,
     route.params.squareMeters,
-    route.params.rooms
+    route.params.rooms,
+    route.params.supplies ?? []
   );
 
-  const [platformPayAvailable, setPlatformPayAvailable] = useState(false);
   const [processing, setProcessing] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      setPlatformPayAvailable(
-        await isPlatformPaySupported({ googlePay: { testEnv: true } })
-      );
-    })();
-  }, []);
+  const stripeReady = STRIPE_PUBLISHABLE_KEY.startsWith('pk_');
 
   const saveAndConfirm = async (paymentIntentId?: string | null) => {
     await createBooking({
@@ -59,41 +39,44 @@ export default function PaymentScreen({ navigation, route }: Props) {
       status: 'paid',
       paymentIntentId: paymentIntentId ?? null,
     });
-    // Replace so the back gesture can't return to the payment screen.
     navigation.replace('Confirmation', route.params);
   };
 
   const pay = async () => {
+    if (!stripeReady) {
+      Alert.alert(t('payment.unavailableTitle'), t('payment.missingKey'));
+      return;
+    }
     setProcessing(true);
     try {
-      const clientSecret = await fetchPaymentIntentClientSecret(amount);
-
-      const { error } = await confirmPlatformPayPayment(clientSecret, {
-        applePay: {
-          cartItems: [
-            {
-              label: `${t(`service.${route.params.option}`)} — ${route.params.date} ${route.params.timeSlot}`,
-              amount: (amount / 100).toFixed(2),
-              paymentType: PlatformPay.PaymentType.Immediate,
-            },
-          ],
-          merchantCountryCode: MERCHANT_COUNTRY_CODE,
-          currencyCode: CURRENCY_CODE,
+      const intent = await createPaymentIntent(route.params);
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: MERCHANT_NAME,
+        paymentIntentClientSecret: intent.clientSecret,
+        defaultBillingDetails: {
+          name: route.params.contact.name,
+          email: route.params.contact.email || undefined,
+          phone: route.params.contact.phone,
         },
+        applePay: { merchantCountryCode: MERCHANT_COUNTRY_CODE },
         googlePay: {
-          testEnv: true, // switch to false in production
-          merchantName: MERCHANT_NAME,
           merchantCountryCode: MERCHANT_COUNTRY_CODE,
+          testEnv: !STRIPE_PUBLISHABLE_KEY.startsWith('pk_live'),
           currencyCode: CURRENCY_CODE,
         },
       });
-
-      if (error) {
-        Alert.alert(t('payment.failedTitle'), error.message);
+      if (initError) {
+        Alert.alert(t('payment.failedTitle'), initError.message);
         return;
       }
-
-      await saveAndConfirm();
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert(t('payment.failedTitle'), presentError.message);
+        }
+        return;
+      }
+      await saveAndConfirm(intent.paymentIntentId);
     } catch (e) {
       Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
     } finally {
@@ -137,26 +120,19 @@ export default function PaymentScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.footer}>
-        {platformPayAvailable ? (
-          <PlatformPayButton
-            onPress={pay}
-            disabled={processing}
-            type={PlatformPay.ButtonType.Pay}
-            appearance={PlatformPay.ButtonStyle.Black}
-            borderRadius={radii.pill}
-            style={styles.payButton}
-          />
-        ) : (
-          <Subtitle>{t('payment.walletUnavailable')}</Subtitle>
-        )}
-        {__DEV__ && (
+        <PillButton
+          label={processing ? t('auth.pleaseWait') : t('payment.pay')}
+          onPress={pay}
+          disabled={processing}
+        />
+        {__DEV__ ? (
           <PillButton
             label={t('payment.simulate')}
             variant="outline"
             onPress={simulatePay}
             disabled={processing}
           />
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -194,8 +170,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: 10,
     gap: 10,
-  },
-  payButton: {
-    height: 54,
   },
 });

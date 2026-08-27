@@ -48,6 +48,16 @@ export function roomsFromOption(option: HomeSize | CrewService): number {
   }
 }
 
+/** Marketplace line items attached to a cleaning booking. */
+export type BookingSupply = {
+  productId: string;
+  nameEl: string;
+  nameEn: string;
+  variantLabel: string | null;
+  unitPriceCents: number;
+  quantity: number;
+};
+
 export type BookingSelection = {
   /** ISO date string, e.g. "2026-08-01" */
   date: string;
@@ -61,6 +71,8 @@ export type BookingSelection = {
   squareMeters: number;
   /** Hours added on top of the base slot via the + stepper. */
   extraHours: number;
+  /** Set on the summary step: `[]` means continue without supplies. */
+  supplies?: BookingSupply[];
 };
 
 /** Mandatory customer details collected before payment. */
@@ -83,6 +95,7 @@ export type BookingStackParamList = {
     squareMeters: number;
   };
   BookingSummary: BookingSelection;
+  BookingSupplies: BookingSelection;
   ContactDetails: BookingSelection;
   Payment: BookingSelection & { contact: ContactDetails };
   Confirmation: BookingSelection & { contact: ContactDetails };

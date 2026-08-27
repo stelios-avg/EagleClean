@@ -67,6 +67,14 @@ export type Database = {
           contact_address: string;
           square_meters: number | null;
           extra_hours: number;
+          supplies: {
+            product_id: string;
+            name_el: string;
+            name_en: string;
+            variant_label: string | null;
+            unit_price_cents: number;
+            quantity: number;
+          }[];
           amount_cents: number;
           status: BookingStatus;
           payment_intent_id: string | null;
@@ -87,6 +95,14 @@ export type Database = {
           contact_address: string;
           square_meters?: number | null;
           extra_hours?: number;
+          supplies?: {
+            product_id: string;
+            name_el: string;
+            name_en: string;
+            variant_label: string | null;
+            unit_price_cents: number;
+            quantity: number;
+          }[];
           amount_cents: number;
           status?: BookingStatus;
           payment_intent_id?: string | null;
@@ -107,6 +123,14 @@ export type Database = {
           contact_address?: string;
           square_meters?: number | null;
           extra_hours?: number;
+          supplies?: {
+            product_id: string;
+            name_el: string;
+            name_en: string;
+            variant_label: string | null;
+            unit_price_cents: number;
+            quantity: number;
+          }[];
           amount_cents?: number;
           status?: BookingStatus;
           payment_intent_id?: string | null;
