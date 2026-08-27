@@ -1,21 +1,26 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { deleteBooking, saveAdminNotes, updateBookingStatus } from './actions';
+import { acceptBooking, deleteBooking, saveAdminNotes, updateBookingStatus } from './actions';
 import type { BookingStatus } from '@/lib/types';
 
 export function BookingRowActions({
   bookingId,
   status,
   notes,
+  suggestedArrival,
+  arrivalTime,
 }: {
   bookingId: string;
   status: BookingStatus;
   notes: string | null;
+  suggestedArrival: string;
+  arrivalTime: string | null;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState(notes ?? '');
+  const [arrival, setArrival] = useState(arrivalTime ?? suggestedArrival);
 
   const run = (statusNext: BookingStatus) => {
     setError(null);
@@ -23,6 +28,20 @@ export function BookingRowActions({
       const result = await updateBookingStatus(bookingId, statusNext);
       if (result.error) {
         setError(result.error);
+      }
+    });
+  };
+
+  const accept = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await acceptBooking(bookingId, arrival);
+      if ('error' in result && result.error) {
+        setError(result.error);
+      } else if ('notified' in result && !result.notified) {
+        setError(
+          'Η κράτηση έγινε αποδεκτή. Ο πελάτης μπορεί να μην πάρει ειδοποίηση αν δεν έχει ανοιχτό το app.'
+        );
       }
     });
   };
@@ -56,17 +75,30 @@ export function BookingRowActions({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex flex-wrap gap-2">
-        {canAccept ? (
+      {canAccept ? (
+        <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-accent-soft/70 px-3 py-2.5">
+          <label className="flex min-w-[140px] flex-1 flex-col gap-1">
+            <span className="text-[11px] font-bold tracking-wide text-accent-dark">
+              ΩΡΑ ΑΦΙΞΗΣ
+            </span>
+            <input
+              type="time"
+              value={arrival}
+              onChange={(e) => setArrival(e.target.value)}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
+            />
+          </label>
           <button
             type="button"
-            disabled={pending}
-            onClick={() => run('accepted')}
-            className="rounded-full bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-50"
+            disabled={pending || !arrival}
+            onClick={accept}
+            className="rounded-full bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-50"
           >
-            Αποδοχή
+            Αποδοχή & ειδοποίηση
           </button>
-        ) : null}
+        </div>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
         {canComplete ? (
           <button
             type="button"

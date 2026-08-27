@@ -3,6 +3,7 @@ import { BrandLogo } from '@/components/brand-logo';
 import { StatusBadge } from '@/components/status-badge';
 import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import { slotStartTime } from '@/lib/arrival';
 import type { Booking, BookingStatus, ServiceCategory } from '@/lib/types';
 import { logout } from '../login/actions';
 import { BookingRowActions } from './booking-row-actions';
@@ -317,6 +318,16 @@ export default async function BookingsPage({
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
                     {formatDate(b.service_date)} · {b.time_slot}
                   </span>
+                  {b.arrival_time ? (
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+                      Άφιξη {b.arrival_time}
+                    </span>
+                  ) : null}
+                  {!b.push_token && (b.status === 'pending' || b.status === 'paid') ? (
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                      Χωρίς ειδοποίηση συσκευής
+                    </span>
+                  ) : null}
                 </div>
 
                 {(Array.isArray(b.supplies) ? b.supplies : []).length > 0 ? (
@@ -337,10 +348,12 @@ export default async function BookingsPage({
 
                 <div className="mt-4 border-t border-zinc-100 pt-4">
                   <BookingRowActions
-                    key={`${b.id}-${b.status}`}
+                    key={`${b.id}-${b.status}-${b.arrival_time ?? ''}`}
                     bookingId={b.id}
                     status={b.status}
                     notes={b.admin_notes}
+                    suggestedArrival={slotStartTime(b.time_slot)}
+                    arrivalTime={b.arrival_time}
                   />
                 </div>
               </li>

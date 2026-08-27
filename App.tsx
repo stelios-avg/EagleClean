@@ -13,6 +13,7 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import PreloadScreen from './src/components/PreloadScreen';
+import { BookingNotifications } from './src/components/BookingNotifications';
 import { STRIPE_PUBLISHABLE_KEY, APPLE_MERCHANT_ID } from './src/constants/payments';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
@@ -44,6 +45,7 @@ export default function App() {
           <CartProvider>
             <NavigationContainer>
               <RootNavigator />
+              <BookingNotifications />
             </NavigationContainer>
             {(preloading || !fontsLoaded) && (
               <PreloadScreen onDone={() => setPreloading(false)} />

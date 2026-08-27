@@ -28,6 +28,7 @@ export type Database = {
           phone: string | null;
           address: string | null;
           role: ProfileRole;
+          push_token: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -38,6 +39,7 @@ export type Database = {
           phone?: string | null;
           address?: string | null;
           role?: ProfileRole;
+          push_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -48,6 +50,7 @@ export type Database = {
           phone?: string | null;
           address?: string | null;
           role?: ProfileRole;
+          push_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -77,6 +80,8 @@ export type Database = {
           }[];
           amount_cents: number;
           status: BookingStatus;
+          arrival_time: string | null;
+          push_token: string | null;
           payment_intent_id: string | null;
           admin_notes: string | null;
           created_at: string;
@@ -105,6 +110,8 @@ export type Database = {
           }[];
           amount_cents: number;
           status?: BookingStatus;
+          arrival_time?: string | null;
+          push_token?: string | null;
           payment_intent_id?: string | null;
           admin_notes?: string | null;
           created_at?: string;
@@ -133,6 +140,8 @@ export type Database = {
           }[];
           amount_cents?: number;
           status?: BookingStatus;
+          arrival_time?: string | null;
+          push_token?: string | null;
           payment_intent_id?: string | null;
           admin_notes?: string | null;
           created_at?: string;

@@ -30,6 +30,13 @@
           "enableGooglePay": true
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "color": "#30CCCC",
+          "defaultChannel": "default"
+        }
+      ],
       "expo-font",
       [
         "expo-location",

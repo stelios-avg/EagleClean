@@ -121,6 +121,14 @@ export default function MyBookingsScreen({ navigation }: Props) {
             {prettyDate(item.service_date)} · {item.time_slot}
           </Text>
         </View>
+        {item.arrival_time ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="time-outline" size={15} color={colors.accent} />
+            <Text style={[styles.metaText, { color: colors.accentDeep }]}>
+              {t('bookings.arrival', { time: item.arrival_time })}
+            </Text>
+          </View>
+        ) : null}
         {item.square_meters ? (
           <View style={styles.metaRow}>
             <Ionicons name="resize-outline" size={15} color={colors.textSecondary} />

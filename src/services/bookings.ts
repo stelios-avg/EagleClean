@@ -3,6 +3,7 @@ import { bookingGrandTotalCents } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { BookingSelection, ContactDetails } from '../navigation/types';
 import type { Booking, BookingStatus } from '../types/database';
+import { getCachedPushToken, registerPushNotifications } from './notifications';
 
 export type CreateBookingInput = BookingSelection & {
   contact: ContactDetails;
@@ -17,6 +18,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
 
   const supplies = input.supplies ?? [];
+  const pushToken = getCachedPushToken() ?? (await registerPushNotifications());
 
   const row = {
     user_id: user?.id ?? null,
@@ -47,6 +49,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
     })),
     status: input.status ?? 'paid',
     payment_intent_id: input.paymentIntentId ?? null,
+    push_token: pushToken,
   };
 
   if (user) {
