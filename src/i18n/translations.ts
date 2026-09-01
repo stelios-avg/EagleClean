@@ -51,6 +51,7 @@ const el = {
   'calendar.sqmError': 'Συμπλήρωσε τα τετραγωνικά του χώρου για να συνεχίσεις.',
   'calendar.continue': 'Συνέχεια',
   'calendar.noSlots': 'Δεν υπάρχουν διαθέσιμες ώρες για αυτή τη μέρα — διάλεξε άλλη.',
+  'calendar.allDay': 'Όλη μέρα 08:00–20:00',
   'unit.hours': 'ώρες',
   'unit.hoursShort': 'ω',
 
@@ -68,7 +69,8 @@ const el = {
   'quote.chipRooms': '{n} υπν.',
   'quote.from': 'από {price}',
   'quote.indicative': 'Ενδεικτικά',
-  'quote.indicativeHint': 'Η τελική τιμή μπορεί να αλλάξει αν προσθέσεις έξτρα ώρες στο ημερολόγιο.',
+  'quote.indicativeHint':
+    '€13/ώρα · 40 m² στην τιμή (από €26 / 2 ώρες) · +€0,50 κάθε έξτρα τετραγωνικό. Έξτρα ώρες €13.',
   'quote.included': 'Περιλαμβάνονται',
   'quote.includedSqm': '{n} m²',
   'quote.overage': '+{price} έξτρα',
@@ -77,20 +79,21 @@ const el = {
   'quote.description': 'Περιγραφή',
   'quote.minDuration': 'Ελάχιστη διάρκεια',
   'quote.hoursValue': '{n}:00 ώρες',
-  'quote.providerTitle': 'Πάροχος καθαρισμού',
-  'quote.providerName': 'EagleClean',
+  'quote.bulletBroom': 'Σκούπα',
+  'quote.bulletMop': 'Φλόκκος',
+  'quote.bulletSurfaces': 'Επιφάνειες',
   'quote.desc.Studio':
-    'Καθαρισμός στούντιο — ενδεικτική τιμή ανάλογα με τα τετραγωνικά του χώρου.',
+    'Καθαρισμός στούντιο. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.1 Bedroom':
-    'Καθαρισμός διαμερίσματος 1 υπνοδωματίου. Επίλεξε τετραγωνικά για ενδεικτική τιμή.',
+    'Καθαρισμός διαμερίσματος 1 υπνοδωματίου. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.2 Bedroom':
-    'Καθαρισμός διαμερίσματος 2 υπνοδωματίων. Η τιμή προσαρμόζεται στα τετραγωνικά.',
+    'Καθαρισμός διαμερίσματος 2 υπνοδωματίων. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.3 Bedroom':
-    'Καθαρισμός μεγαλύτερου σπιτιού. Διάλεξε δωμάτια και τετραγωνικά για ενδεικτική τιμή.',
+    'Καθαρισμός μεγαλύτερου σπιτιού. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.Deep Cleaning':
-    'Βαθύς καθαρισμός σε κάθε χώρο. Η ενδεικτική τιμή εξαρτάται από δωμάτια και m².',
+    'Βαθύς καθαρισμός. Η τιμή ξεκινά από €39 για 3 ώρες και 40 m².',
   'quote.desc.Events':
-    'Καθαρισμός μετά από εκδήλωση. Επίλεξε μέγεθος χώρου για ενδεικτική τιμή.',
+    'Καθαρισμός μετά από εκδήλωση. Η τιμή ξεκινά από €52 για 4 ώρες και 40 m².',
 
   // Service selection
   'services.title': 'Διάλεξε υπηρεσία',
@@ -384,6 +387,7 @@ const en: Record<TranslationKey, string> = {
   'calendar.sqmError': 'Enter the square meters of the space to continue.',
   'calendar.continue': 'Continue',
   'calendar.noSlots': 'No available times on this day — pick another one.',
+  'calendar.allDay': 'All day 08:00–20:00',
   'unit.hours': 'hours',
   'unit.hoursShort': 'h',
 
@@ -400,7 +404,8 @@ const en: Record<TranslationKey, string> = {
   'quote.chipRooms': '{n} bed',
   'quote.from': 'from {price}',
   'quote.indicative': 'Indicative',
-  'quote.indicativeHint': 'The final price can change if you add extra hours on the calendar.',
+  'quote.indicativeHint':
+    '€13/hour · 40 m² included (from €26 / 2 hours) · +€0.50 per extra m². Extra hours €13.',
   'quote.included': 'Included',
   'quote.includedSqm': '{n} m²',
   'quote.overage': '+{price} extra',
@@ -409,20 +414,21 @@ const en: Record<TranslationKey, string> = {
   'quote.description': 'Description',
   'quote.minDuration': 'Minimum duration',
   'quote.hoursValue': '{n}:00 hours',
-  'quote.providerTitle': 'About cleaning provider',
-  'quote.providerName': 'EagleClean',
+  'quote.bulletBroom': 'Broom',
+  'quote.bulletMop': 'Mop',
+  'quote.bulletSurfaces': 'Surfaces',
   'quote.desc.Studio':
-    'Studio clean — indicative price based on the size of the space.',
+    'Studio clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.1 Bedroom':
-    'One-bedroom home clean. Pick square meters to see an indicative price.',
+    'One-bedroom home clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.2 Bedroom':
-    'Two-bedroom home clean. The price adjusts to the square meters.',
+    'Two-bedroom home clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.3 Bedroom':
-    'Larger home clean. Choose rooms and square meters for an indicative price.',
+    'Larger home clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.Deep Cleaning':
-    'Deep clean for every room. Indicative price depends on rooms and m².',
+    'Deep clean. Price starts at €39 for 3 hours and 40 m².',
   'quote.desc.Events':
-    'Post-event clean. Pick the size of the venue for an indicative price.',
+    'Post-event clean. Price starts at €52 for 4 hours and 40 m².',
 
   'services.title': 'Choose a service',
   'services.step': 'Step 2 of 3 — what should we clean?',

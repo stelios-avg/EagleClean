@@ -16,14 +16,22 @@ export const BASE_DURATION_HOURS: Record<HomeSize | CrewService, number> = {
 
 export const DEFAULT_DURATION_HOURS = 2;
 
-/** Flat rate charged for every hour added on top of the base slot. */
-export const EXTRA_HOUR_PRICE_CENTS = 2000;
+/** €13 per hour — base visit and extra hours. */
+export const HOUR_RATE_CENTS = 1300;
+export const EXTRA_HOUR_PRICE_CENTS = HOUR_RATE_CENTS;
 
-const DAY_START_HOUR = 8;
+export const DAY_START_HOUR = 8;
 const DAY_END_HOUR = 18;
 /** Extra hours may push the end of a visit up to this hour. */
-const LATEST_END_HOUR = 20;
+export const LATEST_END_HOUR = 20;
+/** Full working day: 08:00–20:00. */
+export const ALL_DAY_DURATION_HOURS = LATEST_END_HOUR - DAY_START_HOUR;
 export const MAX_EXTRA_HOURS = 4;
+
+/** Extra hours billed when the customer picks the all-day slot. */
+export function allDayExtraHours(baseDuration: number): number {
+  return Math.max(0, ALL_DAY_DURATION_HOURS - baseDuration);
+}
 
 function formatHour(hour: number): string {
   return `${String(hour).padStart(2, '0')}:00`;
@@ -48,10 +56,10 @@ export function maxExtraHoursFor(startHour: number, durationHours: number): numb
   return Math.max(0, Math.min(MAX_EXTRA_HOURS, LATEST_END_HOUR - (startHour + durationHours)));
 }
 
-/** An already-booked time range on a given day (from the availability RPC). */
+/** An admin-closed time range on a given day. */
 export type BookedRange = { start_hour: number; end_hour: number };
 
-/** True when a candidate slot overlaps any active booking of the day. */
+/** True when a candidate slot overlaps any closed window of the day. */
 export function isSlotTaken(
   startHour: number,
   durationHours: number,
@@ -72,9 +80,21 @@ export function isSlotStartPassed(
   return now.getTime() >= start.getTime();
 }
 
+/** All-day is free only when the admin has not closed 08:00–20:00 and 08:00 has not passed. */
+export function isAllDayTaken(
+  isoDate: string,
+  booked: BookedRange[],
+  now?: Date
+): boolean {
+  return (
+    isSlotTaken(DAY_START_HOUR, ALL_DAY_DURATION_HOURS, booked) ||
+    isSlotStartPassed(isoDate, DAY_START_HOUR, now)
+  );
+}
+
 /**
- * Extra-hours cap that also respects the next booking of the day, so an
- * extended visit never runs into someone else's slot.
+ * Extra-hours cap that also respects later closed windows, so an
+ * extended visit never runs into a slot the admin has shut.
  */
 export function maxExtraHoursWithBookings(
   startHour: number,

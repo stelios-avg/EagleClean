@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
+import { AdminHeader } from '@/components/admin-header';
 import { StatusBadge } from '@/components/status-badge';
 import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { slotStartTime } from '@/lib/arrival';
 import type { Booking, BookingStatus, ServiceCategory } from '@/lib/types';
-import { logout } from '../login/actions';
 import { BookingRowActions } from './booking-row-actions';
 import { LiveRefresh } from './live-refresh';
 import { BookingMap } from '@/components/booking-map';
@@ -127,37 +127,7 @@ export default async function BookingsPage({
 
   return (
     <main className="min-h-full bg-[radial-gradient(ellipse_at_top,_#d4f4f4_0%,_#f7fcfc_42%,_#f7fcfc_100%)]">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-ink text-white shadow-[0_12px_40px_rgba(14,20,20,0.28)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="rounded-2xl bg-white px-3 py-2 shadow-sm">
-              <BrandLogo height={42} priority />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold tracking-[0.16em] text-accent">
-                ADMIN PANEL
-              </p>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight">Κρατήσεις</h1>
-                <LiveRefresh onDark />
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 sm:block">
-              {profile.email}
-            </div>
-            <form action={logout}>
-              <button
-                type="submit"
-                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-ink transition hover:bg-accent-soft active:scale-[0.98]"
-              >
-                Αποσύνδεση
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <AdminHeader title="Κρατήσεις" email={profile.email} extra={<LiveRefresh onDark />} />
 
       <div className="animate-fade-up mx-auto max-w-6xl px-6 py-7">
         <div className="mb-6 grid gap-3 sm:grid-cols-3">

@@ -83,6 +83,22 @@ export type Database = {
         };
         Relationships: [];
       };
+      closed_slots: {
+        Row: {
+          id: string;
+          service_date: string;
+          start_hour: number;
+          end_hour: number;
+          created_at: string;
+        };
+        Insert: {
+          service_date: string;
+          start_hour: number;
+          end_hour: number;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

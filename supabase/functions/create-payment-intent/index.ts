@@ -1,28 +1,19 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 
+/** Duration × €13/hour. Must match the app `SERVICE_PRICES`. */
 const SERVICE_PRICES: Record<string, number> = {
-  Studio: 3900,
-  '1 Bedroom': 4900,
-  '2 Bedroom': 5900,
-  '3 Bedroom': 6900,
-  'Deep Cleaning': 8900,
-  Events: 12900,
+  Studio: 2600,
+  '1 Bedroom': 2600,
+  '2 Bedroom': 2600,
+  '3 Bedroom': 2600,
+  'Deep Cleaning': 3900,
+  Events: 5200,
 };
 
-const INCLUDED_SQM: Record<string, number> = {
-  Studio: 40,
-  '1 Bedroom': 70,
-  '2 Bedroom': 100,
-  '3 Bedroom': 140,
-  'Deep Cleaning': 100,
-  Events: 200,
-};
-
-const HOME_SIZES = new Set(['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom']);
-const EXTRA_HOUR_CENTS = 2000;
+const INCLUDED_SQM = 40;
+const EXTRA_HOUR_CENTS = 1300;
 const SQM_OVERAGE_CENTS = 50;
-const EXTRA_ROOM_CENTS = 1000;
 
 type Supply = { unitPriceCents?: number; quantity?: number };
 
@@ -30,7 +21,6 @@ function amountCents(body: {
   option?: string;
   extraHours?: number;
   squareMeters?: number;
-  rooms?: number;
   supplies?: Supply[];
 }): number {
   const option = body.option ?? '';
@@ -39,18 +29,14 @@ function amountCents(body: {
     throw new Error('Unknown service');
   }
   const sqm = Number(body.squareMeters) > 0 ? Number(body.squareMeters) : 0;
-  const extraSqm = Math.max(0, sqm - (INCLUDED_SQM[option] ?? 0));
-  const extraRooms =
-    !HOME_SIZES.has(option) && body.rooms != null
-      ? Math.max(0, Number(body.rooms) - 2) * EXTRA_ROOM_CENTS
-      : 0;
+  const extraSqm = Math.max(0, sqm - INCLUDED_SQM);
   const extraHours = Math.max(0, Number(body.extraHours) || 0);
   const supplies = (body.supplies ?? []).reduce((sum, item) => {
     const price = Math.max(0, Number(item.unitPriceCents) || 0);
     const qty = Math.max(0, Number(item.quantity) || 0);
     return sum + price * qty;
   }, 0);
-  return base + extraSqm * SQM_OVERAGE_CENTS + extraRooms + extraHours * EXTRA_HOUR_CENTS + supplies;
+  return base + extraSqm * SQM_OVERAGE_CENTS + extraHours * EXTRA_HOUR_CENTS + supplies;
 }
 
 const cors = {
@@ -76,7 +62,6 @@ Deno.serve(async (req) => {
       option?: string;
       extraHours?: number;
       squareMeters?: number;
-      rooms?: number;
       supplies?: Supply[];
       date?: string;
       timeSlot?: string;

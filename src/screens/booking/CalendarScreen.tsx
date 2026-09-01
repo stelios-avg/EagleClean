@@ -14,16 +14,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { PillButton } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
 import {
+  ALL_DAY_DURATION_HOURS,
   BASE_DURATION_HOURS,
+  DAY_START_HOUR,
+  allDayExtraHours,
   getSlotStartHours,
+  isAllDayTaken,
   isSlotStartPassed,
   isSlotTaken,
   maxExtraHoursWithBookings,
   slotLabel,
   type BookedRange,
 } from '../../constants/booking';
-import { getBookedSlots } from '../../services/bookings';
+import { getClosedSlots } from '../../services/bookings';
 import { checkServiceArea, type ServiceAreaStatus } from '../../services/serviceArea';
+import { supabase } from '../../lib/supabase';
 import { useI18n } from '../../i18n/LanguageContext';
 import { categoryFor } from '../../navigation/types';
 import { colors, fonts, radii, spacing } from '../../theme';
@@ -104,6 +109,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
   );
   const [selected, setSelected] = useState<Date | null>(null);
   const [startHour, setStartHour] = useState<number | null>(null);
+  const [allDay, setAllDay] = useState(false);
   const [extraHours, setExtraHours] = useState(0);
   const [bookedRanges, setBookedRanges] = useState<BookedRange[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -125,7 +131,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
     }
     let stale = false;
     setLoadingSlots(true);
-    getBookedSlots(toISODate(selected))
+    getClosedSlots(toISODate(selected))
       .then((ranges) => {
         if (!stale) {
           setBookedRanges(ranges);
@@ -143,6 +149,26 @@ export default function CalendarScreen({ navigation, route }: Props) {
       });
     return () => {
       stale = true;
+    };
+  }, [selected]);
+
+  useEffect(() => {
+    if (!selected) {
+      return;
+    }
+    const iso = toISODate(selected);
+    const channel = supabase
+      .channel(`closed-slots-${iso}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'closed_slots', filter: `service_date=eq.${iso}` },
+        () => {
+          void getClosedSlots(iso).then(setBookedRanges).catch(() => {});
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
     };
   }, [selected]);
 
@@ -173,13 +199,21 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const pickDay = (day: Date) => {
     setSelected(day);
     setStartHour(null);
+    setAllDay(false);
     setExtraHours(0);
     setBookedRanges([]);
   };
 
   const pickSlot = (hour: number) => {
+    setAllDay(false);
     setStartHour(hour);
     setExtraHours(0);
+  };
+
+  const pickAllDay = () => {
+    setAllDay(true);
+    setStartHour(DAY_START_HOUR);
+    setExtraHours(allDayExtraHours(duration));
   };
 
   const selectedPretty = selected?.toLocaleDateString(locale, {
@@ -189,14 +223,17 @@ export default function CalendarScreen({ navigation, route }: Props) {
   });
 
   const maxExtra =
-    startHour !== null
+    startHour !== null && !allDay
       ? maxExtraHoursWithBookings(startHour, duration, bookedRanges)
       : 0;
   useEffect(() => {
+    if (allDay) {
+      return;
+    }
     setExtraHours((v) => Math.min(v, maxExtra));
-  }, [maxExtra]);
+  }, [maxExtra, allDay]);
 
-  const totalHours = duration + extraHours;
+  const totalHours = allDay ? ALL_DAY_DURATION_HOURS : duration + extraHours;
   const selectedIso = selected ? toISODate(selected) : null;
   const allSlotsTaken =
     !loadingSlots &&
@@ -206,22 +243,28 @@ export default function CalendarScreen({ navigation, route }: Props) {
         (selectedIso != null && isSlotStartPassed(selectedIso, hour))
     );
 
+  const allDayTaken =
+    selectedIso != null && isAllDayTaken(selectedIso, bookedRanges);
+  const nothingAvailable = allSlotsTaken && allDayTaken;
+
   const handleContinue = () => {
     if (!selected || startHour === null) {
       return;
     }
     if (isSlotStartPassed(toISODate(selected), startHour)) {
       setStartHour(null);
+      setAllDay(false);
       return;
     }
+    const hours = allDay ? ALL_DAY_DURATION_HOURS : duration + extraHours;
     navigation.navigate('BookingSummary', {
       date: toISODate(selected),
-      timeSlot: slotLabel(startHour, totalHours),
+      timeSlot: slotLabel(startHour, hours),
       category: categoryFor(option),
       option,
       rooms,
       squareMeters,
-      extraHours,
+      extraHours: allDay ? allDayExtraHours(duration) : extraHours,
     });
   };
 
@@ -388,7 +431,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
             <Text style={styles.slotsDate}>{selectedPretty}</Text>
             {loadingSlots ? (
               <ActivityIndicator color={colors.accent} style={{ marginVertical: 16 }} />
-            ) : allSlotsTaken ? (
+            ) : nothingAvailable ? (
               <View style={styles.hintRow}>
                 <Ionicons name="close-circle-outline" size={18} color={colors.textSecondary} />
                 <Text style={styles.hintText}>{t('calendar.noSlots')}</Text>
@@ -403,16 +446,29 @@ export default function CalendarScreen({ navigation, route }: Props) {
                     <Chip
                       key={hour}
                       label={slotLabel(hour, duration)}
-                      selected={startHour === hour}
+                      selected={startHour === hour && !allDay}
                       disabled={taken}
                       onPress={() => pickSlot(hour)}
                     />
                   );
                 })}
+                <Chip
+                  label={t('calendar.allDay')}
+                  selected={allDay}
+                  disabled={allDayTaken}
+                  onPress={pickAllDay}
+                />
               </View>
             )}
 
-            {startHour !== null ? (
+            {allDay ? (
+              <Text style={styles.slotsDate}>
+                {slotLabel(DAY_START_HOUR, ALL_DAY_DURATION_HOURS)} · {ALL_DAY_DURATION_HOURS}{' '}
+                {t('unit.hours')}
+              </Text>
+            ) : null}
+
+            {startHour !== null && !allDay ? (
               <View style={{ gap: 10, marginTop: 8 }}>
                 <Text style={styles.sectionTitle}>{t('calendar.extraHours')}</Text>
                 <Text style={styles.slotsDate}>

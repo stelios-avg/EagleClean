@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { BrandLogo, PillButton } from '../../components/ui';
+import { PillButton } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
 import { BASE_DURATION_HOURS } from '../../constants/booking';
 import {
@@ -36,12 +36,25 @@ import {
   type CrewService,
   type HomeSize,
 } from '../../navigation/types';
-import { colors, fonts, radii, spacing } from '../../theme';
+import { colors, fonts, spacing } from '../../theme';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'Quote'>;
 
 const ALL_OPTIONS: (HomeSize | CrewService)[] = [...HOME_SIZES, ...CREW_SERVICES];
 const SQM_PRESETS = [40, 60, 80, 100, 120, 150];
+const INCLUDE_BULLETS: TranslationKey[] = [
+  'quote.bulletBroom',
+  'quote.bulletMop',
+  'quote.bulletSurfaces',
+];
+const TEAM_PHOTOS: ImageSourcePropType[] = [
+  require('../../../assets/images/team/cleaner-1.png'),
+  require('../../../assets/images/team/cleaner-2.png'),
+  require('../../../assets/images/team/cleaner-3.png'),
+  require('../../../assets/images/team/cleaner-4.png'),
+];
+const TEAM_RATINGS = [5, 5, 4.5, 5];
+const TEAM_RATING = 4.9;
 
 const DESC_KEY: Record<HomeSize | CrewService, TranslationKey> = {
   Studio: 'quote.desc.Studio',
@@ -60,6 +73,20 @@ function heroFor(option?: HomeSize | CrewService): ImageSourcePropType {
   return option === 'Events'
     ? require('../../../assets/images/service-crew.png')
     : require('../../../assets/images/service-home.png');
+}
+
+function StarRow({ rating, size = 16 }: { rating: number; size?: number }) {
+  return (
+    <View style={styles.starRow} accessibilityLabel={`${rating} stars`}>
+      {[1, 2, 3, 4, 5].map((i) => {
+        const icon =
+          rating >= i ? 'star' : rating >= i - 0.5 ? 'star-half' : 'star-outline';
+        return (
+          <Ionicons key={i} name={icon} size={size} color={colors.accent} />
+        );
+      })}
+    </View>
+  );
 }
 
 function Chip({
@@ -189,6 +216,10 @@ export default function QuoteScreen({ navigation, route }: Props) {
           <Text style={styles.title}>
             {option ? serviceLabel(t(`service.${option}`)) : t('quote.title')}
           </Text>
+          <View style={styles.summaryRating}>
+            <StarRow rating={TEAM_RATING} size={14} />
+            <Text style={styles.summaryRatingText}>{TEAM_RATING.toFixed(1)}</Text>
+          </View>
           <View style={styles.priceRow}>
             <Text style={styles.price}>
               {option ? t('quote.from', { price: formatEuros(priceCents) }) : '—'}
@@ -211,7 +242,7 @@ export default function QuoteScreen({ navigation, route }: Props) {
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>{t('quote.included')}</Text>
               <Text style={styles.metaValue}>
-                {t('quote.includedSqm', { n: String(INCLUDED_SQM[option]) })}
+                {t('quote.includedSqm', { n: String(INCLUDED_SQM) })}
               </Text>
             </View>
           ) : null}
@@ -222,6 +253,14 @@ export default function QuoteScreen({ navigation, route }: Props) {
           <Text style={styles.body}>
             {option ? t(DESC_KEY[option]) : t('quote.pickServiceHint')}
           </Text>
+          <View style={styles.bulletList}>
+            {INCLUDE_BULLETS.map((key) => (
+              <View key={key} style={styles.bulletRow}>
+                <View style={styles.bulletDot} />
+                <Text style={styles.bulletText}>{t(key)}</Text>
+              </View>
+            ))}
+          </View>
           <Text style={styles.bodyMuted}>{t('quote.indicativeHint')}</Text>
         </View>
 
@@ -303,11 +342,23 @@ export default function QuoteScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('quote.providerTitle')}</Text>
-          <View style={styles.providerCard}>
-            <BrandLogo height={36} />
-            <Text style={styles.providerName}>{t('quote.providerName')}</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.teamRow}
+          >
+            {TEAM_PHOTOS.map((source, index) => (
+              <View key={index} style={styles.teamCard}>
+                <Image source={source} style={styles.teamPhoto} />
+                <StarRow rating={TEAM_RATINGS[index] ?? 5} size={12} />
+              </View>
+            ))}
+          </ScrollView>
+          <View style={styles.reviewRow}>
+            <StarRow rating={TEAM_RATING} size={22} />
+            <Text style={styles.ratingNumber}>{TEAM_RATING.toFixed(1)}</Text>
           </View>
+          <StarRow rating={5} size={22} />
         </View>
       </ScrollView>
 
@@ -374,6 +425,16 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: 30,
   },
+  summaryRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  summaryRatingText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.accent,
+  },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -429,6 +490,26 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textSecondary,
     lineHeight: 19,
+  },
+  bulletList: {
+    gap: 8,
+    marginTop: 4,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bulletDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
+  bulletText: {
+    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    color: colors.textPrimary,
   },
   chipWrap: {
     flexDirection: 'row',
@@ -486,18 +567,33 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     color: '#E5484D',
   },
-  providerCard: {
+  starRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.surface,
-    borderRadius: radii.row,
-    padding: 12,
+    gap: 1,
   },
-  providerName: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: fonts.bold,
+  teamRow: {
+    gap: 12,
+    paddingRight: 8,
+  },
+  teamCard: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  teamPhoto: {
+    width: 108,
+    height: 108,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+  },
+  reviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  ratingNumber: {
+    fontSize: 22,
+    fontFamily: fonts.extraBold,
     color: colors.textPrimary,
   },
   footer: {

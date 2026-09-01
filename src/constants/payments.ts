@@ -1,5 +1,5 @@
-import { isHomeSize, type CrewService, type HomeSize } from '../navigation/types';
-import { EXTRA_HOUR_PRICE_CENTS } from './booking';
+import { BASE_DURATION_HOURS, EXTRA_HOUR_PRICE_CENTS } from './booking';
+import type { CrewService, HomeSize } from '../navigation/types';
 
 /**
  * Stripe publishable key (test or live). Safe to ship in the client.
@@ -16,50 +16,38 @@ export const MERCHANT_NAME = 'EagleClean';
 export const MERCHANT_COUNTRY_CODE = 'CY'; // ISO country of the business
 export const CURRENCY_CODE = 'EUR';
 
-/** Mock price list in cents. Phase 2 moves this into the Supabase `services` table. */
+/** Square meters included in the base price for every service. */
+export const INCLUDED_SQM = 40;
+
+/** €0.50 per m² above 40 m² (e.g. 60 m² → +€10.00). */
+export const SQM_OVERAGE_CENTS = 50;
+
+/** Base price = duration × €13/hour (2h → €26, 3h → €39, 4h → €52). */
 export const SERVICE_PRICES: Record<HomeSize | CrewService, number> = {
-  Studio: 3900,
-  '1 Bedroom': 4900,
-  '2 Bedroom': 5900,
-  '3 Bedroom': 6900,
-  'Deep Cleaning': 8900,
-  Events: 12900,
+  Studio: BASE_DURATION_HOURS.Studio * EXTRA_HOUR_PRICE_CENTS,
+  '1 Bedroom': BASE_DURATION_HOURS['1 Bedroom'] * EXTRA_HOUR_PRICE_CENTS,
+  '2 Bedroom': BASE_DURATION_HOURS['2 Bedroom'] * EXTRA_HOUR_PRICE_CENTS,
+  '3 Bedroom': BASE_DURATION_HOURS['3 Bedroom'] * EXTRA_HOUR_PRICE_CENTS,
+  'Deep Cleaning': BASE_DURATION_HOURS['Deep Cleaning'] * EXTRA_HOUR_PRICE_CENTS,
+  Events: BASE_DURATION_HOURS.Events * EXTRA_HOUR_PRICE_CENTS,
 };
 
 export function formatEuros(cents: number): string {
   return `€${(cents / 100).toFixed(2)}`;
 }
 
-/** Square meters included in the base service price before overage. */
-export const INCLUDED_SQM: Record<HomeSize | CrewService, number> = {
-  Studio: 40,
-  '1 Bedroom': 70,
-  '2 Bedroom': 100,
-  '3 Bedroom': 140,
-  'Deep Cleaning': 100,
-  Events: 200,
-};
-
-/** €0.50 per m² above the included allowance. */
-export const SQM_OVERAGE_CENTS = 50;
-
-/** Deep / Events: €10 per bedroom above 2. */
-export const EXTRA_ROOM_CENTS = 1000;
-
-/** Indicative "from" price from rooms + square meters (before extra hours). */
+/** Indicative "from" price from square meters (before extra hours). */
 export function indicativePriceCents(
   option: HomeSize | CrewService,
   squareMeters: number,
-  rooms?: number
+  _rooms?: number
 ): number {
   const sqm = Number.isFinite(squareMeters) && squareMeters > 0 ? squareMeters : 0;
-  const extraSqm = Math.max(0, sqm - INCLUDED_SQM[option]);
-  const extraRooms =
-    !isHomeSize(option) && rooms != null ? Math.max(0, rooms - 2) * EXTRA_ROOM_CENTS : 0;
-  return SERVICE_PRICES[option] + extraSqm * SQM_OVERAGE_CENTS + extraRooms;
+  const extraSqm = Math.max(0, sqm - INCLUDED_SQM);
+  return SERVICE_PRICES[option] + extraSqm * SQM_OVERAGE_CENTS;
 }
 
-/** Indicative price plus the flat per-hour charge for extra hours. */
+/** Indicative price plus the per-hour charge for extra hours. */
 export function bookingTotalCents(
   option: HomeSize | CrewService,
   extraHours: number,

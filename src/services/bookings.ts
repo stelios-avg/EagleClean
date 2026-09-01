@@ -96,11 +96,14 @@ export async function cancelBooking(id: string): Promise<void> {
 }
 
 /**
- * Occupied time ranges for a day, via a SECURITY DEFINER function so
- * guests can see availability without seeing anyone's booking details.
+ * Windows the admin has closed for a day. Everyone can read them;
+ * bookings no longer hide slots on their own.
  */
-export async function getBookedSlots(date: string): Promise<BookedRange[]> {
-  const { data, error } = await supabase.rpc('get_booked_slots', { day: date });
+export async function getClosedSlots(date: string): Promise<BookedRange[]> {
+  const { data, error } = await supabase
+    .from('closed_slots')
+    .select('start_hour, end_hour')
+    .eq('service_date', date);
 
   if (error) {
     throw new Error(error.message);

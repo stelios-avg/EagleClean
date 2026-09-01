@@ -272,6 +272,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      closed_slots: {
+        Row: {
+          id: string;
+          service_date: string;
+          start_hour: number;
+          end_hour: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          service_date: string;
+          start_hour: number;
+          end_hour: number;
+          created_at?: string;
+        };
+        Update: {
+          service_date?: string;
+          start_hour?: number;
+          end_hour?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
