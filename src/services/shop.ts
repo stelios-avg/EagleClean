@@ -1,5 +1,6 @@
 import catalog from '../data/products.json';
 import { HIDDEN_SHOP_CATEGORIES } from '../constants/shop';
+import { SERVICE_FEE_CENTS } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { ContactDetails } from '../navigation/types';
 import type { Product, ProductOrder, ProductOrderItem } from '../types/database';
@@ -48,7 +49,8 @@ export async function createProductOrder(
     throw new Error(userError?.message ?? 'Not signed in');
   }
 
-  const total = items.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+  const subtotal = items.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+  const total = subtotal + SERVICE_FEE_CENTS;
 
   const { data: order, error: orderError } = await supabase
     .from('product_orders')
@@ -66,8 +68,8 @@ export async function createProductOrder(
     throw new Error(orderError.message);
   }
 
-  const { error: itemsError } = await supabase.from('product_order_items').insert(
-    items.map((i) => ({
+  const { error: itemsError } = await supabase.from('product_order_items').insert([
+    ...items.map((i) => ({
       order_id: order.id,
       product_id: i.productId,
       name_el: i.nameEl,
@@ -75,8 +77,17 @@ export async function createProductOrder(
       variant_label: i.variantLabel,
       unit_price_cents: i.unitPriceCents,
       quantity: i.quantity,
-    }))
-  );
+    })),
+    {
+      order_id: order.id,
+      product_id: null,
+      name_el: 'Service fee',
+      name_en: 'Service fee',
+      variant_label: null,
+      unit_price_cents: SERVICE_FEE_CENTS,
+      quantity: 1,
+    },
+  ]);
 
   if (itemsError) {
     // Don't leave a header row without items behind.

@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProductThumb } from '../../components/ProductThumb';
 import { PillButton, SubpageHeader, Subtitle } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
-import { formatEuros } from '../../constants/payments';
+import { SERVICE_FEE_CENTS, formatEuros, withServiceFee } from '../../constants/payments';
 import { useCart, type CartItem } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -103,8 +103,12 @@ export default function CartScreen({ navigation }: Props) {
             style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 14) }]}
           >
             <View style={styles.totalRow}>
+              <Text style={styles.feeLabel}>{t('summary.serviceFee')}</Text>
+              <Text style={styles.feeValue}>{formatEuros(SERVICE_FEE_CENTS)}</Text>
+            </View>
+            <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{t('shop.total')}</Text>
-              <Text style={styles.totalValue}>{formatEuros(totalCents)}</Text>
+              <Text style={styles.totalValue}>{formatEuros(withServiceFee(totalCents))}</Text>
             </View>
             {!isAuthenticated ? <Subtitle>{t('shop.loginPrompt')}</Subtitle> : null}
             <PillButton
@@ -210,6 +214,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  feeLabel: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+  },
+  feeValue: {
+    fontSize: 16,
+    fontFamily: fonts.bold,
+    color: colors.textPrimary,
   },
   totalLabel: {
     fontSize: 16,

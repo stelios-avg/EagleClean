@@ -133,7 +133,9 @@ export default function MyBookingsScreen({ navigation }: Props) {
           <View style={styles.metaRow}>
             <Ionicons name="resize-outline" size={15} color={colors.textSecondary} />
             <Text style={styles.metaText}>
-              {item.square_meters} m²
+              {item.option === 'Ironing'
+                ? t('quote.piecesValue', { n: String(item.square_meters) })
+                : `${item.square_meters} m²`}
               {item.extra_hours > 0 ? ` · +${item.extra_hours} ${t('unit.hours')}` : ''}
             </Text>
           </View>

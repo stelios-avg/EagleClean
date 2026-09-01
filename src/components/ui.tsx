@@ -16,11 +16,11 @@ import { useI18n } from '../i18n/LanguageContext';
 import type { Language } from '../i18n/translations';
 import { colors, fonts, radii, spacing } from '../theme';
 
-const LOGO_ASPECT = 1014 / 720;
+const LOGO_ASPECT = 908 / 613;
 
 /**
- * Company logo (Eagle Watch Cleaning Services). The artwork is navy/gold on
- * transparent, so on dark surfaces it sits inside a white rounded chip.
+ * Cleanovox wordmark + monogram. The artwork sits on white, so dark
+ * headers wrap it in a rounded chip.
  */
 export function BrandLogo({
   height = 38,

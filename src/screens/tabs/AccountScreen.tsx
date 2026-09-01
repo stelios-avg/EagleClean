@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   ImageBackground,
@@ -8,26 +8,37 @@ import {
   View,
 } from 'react-native';
 import type { CompositeScreenProps } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { BrandLogo, LanguageToggle, PillButton } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
+import {
+  CURRENCY_CODE,
+  MERCHANT_COUNTRY_CODE,
+  MERCHANT_NAME,
+  STRIPE_PUBLISHABLE_KEY,
+} from '../../constants/payments';
+import { confirmMembership, startMembership } from '../../services/payments';
+import { getMyProfile } from '../../services/profile';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { TranslationKey } from '../../i18n/translations';
 import type { MainTabParamList, RootStackParamList } from '../../navigation/types';
+import type { Profile } from '../../types/database';
 
-const MEMBERSHIP_PERKS: TranslationKey[] = [
-  'account.perk1',
-  'account.perk2',
-  'account.perk3',
-  'account.perk4',
-  'account.perk5',
-  'account.perk6',
+const MEMBERSHIP_PERKS: { emoji: string; key: TranslationKey }[] = [
+  { emoji: '🏷️', key: 'account.perk1' },
+  { emoji: '⚡', key: 'account.perk2' },
+  { emoji: '🔄', key: 'account.perk3' },
+  { emoji: '👩', key: 'account.perk4' },
+  { emoji: '🛒', key: 'account.perk5' },
+  { emoji: '🎁', key: 'account.perk6' },
 ];
 
 const GUEST_HIGHLIGHTS: {
@@ -94,8 +105,27 @@ function MenuRow({
 
 export default function AccountScreen({ navigation }: Props) {
   const { session, isAuthenticated, signOut } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const insets = useSafeAreaInsets();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [paying, setPaying] = useState(false);
+
+  const loadProfile = useCallback(() => {
+    if (!isAuthenticated) {
+      setProfile(null);
+      return;
+    }
+    getMyProfile()
+      .then(setProfile)
+      .catch(() => setProfile(null));
+  }, [isAuthenticated]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile])
+  );
 
   if (!isAuthenticated) {
     return (
@@ -149,9 +179,68 @@ export default function AccountScreen({ navigation }: Props) {
     );
   }
 
-  const purchaseMembership = () => {
-    Alert.alert(t('account.membership'), t('account.membershipSoon'));
+  const purchaseMembership = async () => {
+    if (!STRIPE_PUBLISHABLE_KEY.startsWith('pk_')) {
+      Alert.alert(t('payment.unavailableTitle'), t('payment.missingKey'));
+      return;
+    }
+    setPaying(true);
+    try {
+      const started = await startMembership();
+      if (started.alreadyActive) {
+        loadProfile();
+        Alert.alert(t('account.membershipSuccessTitle'), t('account.membershipSuccessBody'));
+        return;
+      }
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: MERCHANT_NAME,
+        paymentIntentClientSecret: started.clientSecret,
+        defaultBillingDetails: {
+          email: session?.email || undefined,
+          name: profile?.full_name || undefined,
+          phone: profile?.phone || undefined,
+        },
+        applePay: { merchantCountryCode: MERCHANT_COUNTRY_CODE },
+        googlePay: {
+          merchantCountryCode: MERCHANT_COUNTRY_CODE,
+          testEnv: !STRIPE_PUBLISHABLE_KEY.startsWith('pk_live'),
+          currencyCode: CURRENCY_CODE,
+        },
+      });
+      if (initError) {
+        Alert.alert(t('payment.failedTitle'), initError.message);
+        return;
+      }
+      const { error: presentError } = await presentPaymentSheet();
+      if (presentError) {
+        if (presentError.code !== 'Canceled') {
+          Alert.alert(t('payment.failedTitle'), presentError.message);
+        }
+        return;
+      }
+      if (started.subscriptionId) {
+        await confirmMembership(started.subscriptionId);
+      }
+      loadProfile();
+      Alert.alert(t('account.membershipSuccessTitle'), t('account.membershipSuccessBody'));
+    } catch (e) {
+      Alert.alert(t('payment.unavailableTitle'), (e as Error).message);
+    } finally {
+      setPaying(false);
+    }
   };
+
+  const memberActive = profile?.membership_status === 'active';
+  const renewsLabel =
+    memberActive && profile?.membership_renews_at
+      ? t('account.memberRenews', {
+          date: new Date(profile.membership_renews_at).toLocaleDateString(locale, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }),
+        })
+      : null;
 
   const initial = session?.email.slice(0, 1).toUpperCase() ?? '?';
 
@@ -198,20 +287,28 @@ export default function AccountScreen({ navigation }: Props) {
             €14.99
             <Text style={styles.membershipPeriod}>{t('account.perMonth')}</Text>
           </Text>
+          {memberActive ? (
+            <Text style={styles.memberActive}>
+              {renewsLabel ?? t('account.memberActive')}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.perksList}>
-          {MEMBERSHIP_PERKS.map((key) => (
-            <View key={key} style={styles.perkRow}>
-              <Ionicons name="checkmark-circle" size={18} color="#7CFFB2" />
-              <Text style={styles.perkText}>{t(key)}</Text>
+          {MEMBERSHIP_PERKS.map((perk) => (
+            <View key={perk.key} style={styles.perkRow}>
+              <Text style={styles.perkEmoji}>{perk.emoji}</Text>
+              <Text style={styles.perkText}>{t(perk.key)}</Text>
             </View>
           ))}
         </View>
-        <PillButton
-          label={t('account.become')}
-          variant="light"
-          onPress={purchaseMembership}
-        />
+        {memberActive ? null : (
+          <PillButton
+            label={paying ? t('auth.pleaseWait') : t('account.membershipPay')}
+            variant="light"
+            onPress={() => void purchaseMembership()}
+            disabled={paying}
+          />
+        )}
       </View>
 
       <Text style={styles.sectionLabel}>{t('account.sectionActivity')}</Text>
@@ -427,6 +524,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     color: colors.textOnDarkMuted,
   },
+  memberActive: {
+    marginTop: 4,
+    color: '#7CFFB2',
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+  },
   perksList: {
     gap: 8,
     marginBottom: 4,
@@ -435,6 +538,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
+  },
+  perkEmoji: {
+    width: 22,
+    fontSize: 16,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   perkText: {
     flex: 1,

@@ -1,24 +1,37 @@
-import type { CrewService, HomeSize } from '../navigation/types';
+import type { BookingOption } from '../navigation/types';
 
 /**
  * Base visit duration in hours per service:
  * regular home cleaning books in 2-hour slots, deep cleaning in 3-hour
  * slots, events in 4-hour slots. Extra hours can be added on top.
  */
-export const BASE_DURATION_HOURS: Record<HomeSize | CrewService, number> = {
+export const BASE_DURATION_HOURS: Record<BookingOption, number> = {
   Studio: 2,
   '1 Bedroom': 2,
   '2 Bedroom': 2,
   '3 Bedroom': 2,
   'Deep Cleaning': 3,
   Events: 4,
+  Ironing: 2,
 };
 
 export const DEFAULT_DURATION_HOURS = 2;
 
-/** €13 per hour — base visit and extra hours. */
+/** €13 per hour for home cleaning. Deep €18. Events €16. */
 export const HOUR_RATE_CENTS = 1300;
+export const DEEP_HOUR_RATE_CENTS = 1800;
+export const EVENTS_HOUR_RATE_CENTS = 1600;
 export const EXTRA_HOUR_PRICE_CENTS = HOUR_RATE_CENTS;
+
+export function hourRateCents(option: BookingOption): number {
+  if (option === 'Events') {
+    return EVENTS_HOUR_RATE_CENTS;
+  }
+  if (option === 'Deep Cleaning') {
+    return DEEP_HOUR_RATE_CENTS;
+  }
+  return HOUR_RATE_CENTS;
+}
 
 export const DAY_START_HOUR = 8;
 const DAY_END_HOUR = 18;

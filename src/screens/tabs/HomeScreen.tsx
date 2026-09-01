@@ -23,8 +23,7 @@ import { useI18n } from '../../i18n/LanguageContext';
 import type { TranslationKey } from '../../i18n/translations';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type {
-  CrewService,
-  HomeSize,
+  BookingOption,
   MainTabParamList,
   RootStackParamList,
 } from '../../navigation/types';
@@ -34,7 +33,7 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
-type ServiceOption = HomeSize | CrewService;
+type ServiceOption = BookingOption;
 
 const CATEGORIES: { option: ServiceOption; icon: ImageSourcePropType }[] = [
   { option: 'Studio', icon: require('../../../assets/images/icons/cat-studio.png') },
@@ -43,9 +42,11 @@ const CATEGORIES: { option: ServiceOption; icon: ImageSourcePropType }[] = [
   { option: '3 Bedroom', icon: require('../../../assets/images/icons/cat-3bed.png') },
   { option: 'Deep Cleaning', icon: require('../../../assets/images/icons/cat-deep.png') },
   { option: 'Events', icon: require('../../../assets/images/icons/cat-events.png') },
+  { option: 'Ironing', icon: require('../../../assets/images/icons/cat-ironing.png') },
 ];
 
 const FEATURED: { option: ServiceOption; image: ImageSourcePropType }[] = [
+  { option: 'Ironing', image: require('../../../assets/images/service-ironing.jpg') },
   { option: 'Deep Cleaning', image: require('../../../assets/images/service-home.png') },
   { option: 'Events', image: require('../../../assets/images/service-crew.png') },
   { option: '2 Bedroom', image: require('../../../assets/images/hero-welcome.png') },

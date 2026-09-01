@@ -13,6 +13,7 @@ import { BookingMap } from '@/components/booking-map';
 const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   'my-home': 'Σπίτι',
   'cleaning-crew': 'Συνεργείο',
+  ironing: 'Σιδέρωμα',
 };
 
 function euros(cents: number) {
@@ -279,14 +280,16 @@ export default async function BookingsPage({
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-bold text-accent-dark">
-                    {b.option}
+                    {b.option === 'Ironing' ? 'Σιδέρωμα' : b.option}
                   </span>
                   <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
                     {CATEGORY_LABEL[b.category]}
                   </span>
                   {b.square_meters ? (
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
-                      {b.square_meters} m²
+                      {b.option === 'Ironing'
+                        ? `${b.square_meters} τμχ`
+                        : `${b.square_meters} m²`}
                     </span>
                   ) : null}
                   {b.extra_hours > 0 ? (

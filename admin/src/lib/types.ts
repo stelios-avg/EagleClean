@@ -8,7 +8,7 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled';
 
-export type ServiceCategory = 'my-home' | 'cleaning-crew';
+export type ServiceCategory = 'my-home' | 'cleaning-crew' | 'ironing';
 
 export type Database = {
   public: {

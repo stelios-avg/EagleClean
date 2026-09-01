@@ -1,4 +1,5 @@
 export type ProfileRole = 'customer' | 'admin';
+export type MembershipStatus = 'none' | 'incomplete' | 'active' | 'past_due' | 'canceled';
 
 export type BookingStatus =
   | 'pending'
@@ -8,7 +9,7 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled';
 
-export type ServiceCategory = 'my-home' | 'cleaning-crew';
+export type ServiceCategory = 'my-home' | 'cleaning-crew' | 'ironing';
 
 export type ProductOrderStatus =
   | 'pending'
@@ -31,6 +32,10 @@ export type Database = {
           address_lng: number | null;
           role: ProfileRole;
           push_token: string | null;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          membership_status: MembershipStatus;
+          membership_renews_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -44,6 +49,10 @@ export type Database = {
           address_lng?: number | null;
           role?: ProfileRole;
           push_token?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          membership_status?: MembershipStatus;
+          membership_renews_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -57,6 +66,10 @@ export type Database = {
           address_lng?: number | null;
           role?: ProfileRole;
           push_token?: string | null;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          membership_status?: MembershipStatus;
+          membership_renews_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

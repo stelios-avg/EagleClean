@@ -95,7 +95,7 @@ function Chip({
 export default function CalendarScreen({ navigation, route }: Props) {
   const { t, locale } = useI18n();
   const insets = useSafeAreaInsets();
-  const { option, rooms, squareMeters } = route.params;
+  const { option, rooms, squareMeters, pieces } = route.params;
 
   const duration = BASE_DURATION_HOURS[option];
   const slotStartHours = useMemo(() => getSlotStartHours(duration), [duration]);
@@ -264,6 +264,7 @@ export default function CalendarScreen({ navigation, route }: Props) {
       option,
       rooms,
       squareMeters,
+      pieces,
       extraHours: allDay ? allDayExtraHours(duration) : extraHours,
     });
   };
@@ -272,7 +273,9 @@ export default function CalendarScreen({ navigation, route }: Props) {
   const hero =
     option === 'Events'
       ? require('../../../assets/images/service-crew.png')
-      : require('../../../assets/images/service-home.png');
+      : option === 'Ironing'
+        ? require('../../../assets/images/service-ironing.jpg')
+        : require('../../../assets/images/service-home.png');
 
   if (areaStatus !== 'inside') {
     return (
@@ -351,12 +354,23 @@ export default function CalendarScreen({ navigation, route }: Props) {
 
         <View style={styles.summaryCard}>
           <Text style={styles.category}>
-            {categoryFor(option) === 'my-home' ? t('services.myHome') : t('services.crew')}
+            {option === 'Ironing'
+              ? t('services.ironing')
+              : categoryFor(option) === 'my-home'
+                ? t('services.myHome')
+                : t('services.crew')}
           </Text>
           <Text style={styles.title}>{t(`service.${option}`).replace(/\n/g, '')}</Text>
           <Text style={styles.summaryMeta}>
-            {squareMeters} m²
-            {rooms > 0 ? ` · ${t('quote.chipRooms', { n: String(rooms) })}` : ` · ${t('quote.chipStudio')}`}
+            {option === 'Ironing'
+              ? t('quote.piecesValue', { n: String(pieces ?? 0) })
+              : `${squareMeters} m²${
+                  option !== 'Events'
+                    ? rooms > 0
+                      ? ` · ${t('quote.chipRooms', { n: String(rooms) })}`
+                      : ` · ${t('quote.chipStudio')}`
+                    : ''
+                }`}
             {` · ${t('quote.hoursValue', { n: String(duration) })}`}
           </Text>
         </View>

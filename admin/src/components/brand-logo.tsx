@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-const LOGO_ASPECT = 1014 / 720;
+const LOGO_ASPECT = 908 / 613;
 
 export function BrandLogo({
   height = 48,
@@ -12,7 +12,7 @@ export function BrandLogo({
   return (
     <Image
       src="/logo.png"
-      alt="Eagle Watch Cleaning Services"
+      alt="Cleanovox"
       height={height}
       width={Math.round(height * LOGO_ASPECT)}
       priority={priority}

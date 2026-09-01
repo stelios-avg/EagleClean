@@ -8,8 +8,8 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'EagleClean Admin',
-  description: 'Διαχείριση κρατήσεων EagleClean',
+  title: 'Cleanovox Admin',
+  description: 'Διαχείριση κρατήσεων Cleanovox',
 };
 
 export const viewport: Viewport = {

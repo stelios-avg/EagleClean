@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "EagleClean",
+    "name": "Cleanovox",
     "slug": "EagleClean",
     "scheme": "eagleclean",
     "version": "1.0.0",
@@ -12,7 +12,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F3FAFA",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -41,15 +41,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Το EagleClean χρησιμοποιεί τη θέση σου για να συμπληρώσει τη διεύθυνση και να επιβεβαιώσει ότι βρίσκεσαι στην περιοχή εξυπηρέτησης (Λευκωσία)."
+          "locationWhenInUsePermission": "Το Cleanovox χρησιμοποιεί τη θέση σου για να συμπληρώσει τη διεύθυνση και να επιβεβαιώσει ότι βρίσκεσαι στην περιοχή εξυπηρέτησης (Λευκωσία)."
         }
       ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/logo.png",
-          "backgroundColor": "#F3FAFA",
-          "imageWidth": 200,
+          "backgroundColor": "#FFFFFF",
+          "imageWidth": 260,
           "resizeMode": "contain"
         }
       ]

@@ -71,6 +71,12 @@ const el = {
   'quote.indicative': 'Ενδεικτικά',
   'quote.indicativeHint':
     '€13/ώρα · 40 m² στην τιμή (από €26 / 2 ώρες) · +€0,50 κάθε έξτρα τετραγωνικό. Έξτρα ώρες €13.',
+  'quote.indicativeHintEvents':
+    '€16/ώρα · 40 m² στην τιμή (από €64 / 4 ώρες) · +€0,50 κάθε έξτρα τετραγωνικό. Έξτρα ώρες €16.',
+  'quote.indicativeHintIroning':
+    '€16 / 10 τεμάχια · κάθε επόμενα 10 τεμάχια έχουν €2 έκπτωση. Πάτα Άλλο για όσα θέλεις.',
+  'quote.indicativeHintDeep':
+    '€18/ώρα · 40 m² στην τιμή (από €54 / 3 ώρες) · +€0,50 κάθε έξτρα τετραγωνικό. Έξτρα ώρες €18.',
   'quote.included': 'Περιλαμβάνονται',
   'quote.includedSqm': '{n} m²',
   'quote.overage': '+{price} έξτρα',
@@ -82,6 +88,21 @@ const el = {
   'quote.bulletBroom': 'Σκούπα',
   'quote.bulletMop': 'Φλόκκος',
   'quote.bulletSurfaces': 'Επιφάνειες',
+  'quote.bulletToilet': 'Καθαρισμός τουαλέτας',
+  'quote.bulletTrash': 'Συλλογή σκουπιδιών',
+  'quote.bulletClothes': 'Ρούχα & πουκάμισα',
+  'quote.bulletSteam': 'Σιδέρωμα με ατμό',
+  'quote.bulletHoover': 'Hoover',
+  'quote.bulletAluminum': 'Αλουμινόπορτες',
+  'quote.bulletWindows': 'Παράθυρα',
+  'quote.bulletCupboards': 'Ερμάρια',
+  'quote.bulletFridge': 'Ψυγείο',
+  'quote.pieces': 'Τεμάχια',
+  'quote.piecesPack': '10 τεμάχια',
+  'quote.piecesValue': '{n} τμχ',
+  'quote.piecesUnit': 'τμχ',
+  'quote.piecesPlaceholder': 'π.χ. 25',
+  'quote.piecesError': 'Συμπλήρωσε πόσα τεμάχια θέλεις.',
   'quote.desc.Studio':
     'Καθαρισμός στούντιο. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.1 Bedroom':
@@ -91,15 +112,18 @@ const el = {
   'quote.desc.3 Bedroom':
     'Καθαρισμός μεγαλύτερου σπιτιού. Η τιμή ξεκινά από €26 για 2 ώρες και 40 m².',
   'quote.desc.Deep Cleaning':
-    'Βαθύς καθαρισμός. Η τιμή ξεκινά από €39 για 3 ώρες και 40 m².',
+    'Βαθύς καθαρισμός. Η τιμή ξεκινά από €54 για 3 ώρες και 40 m².',
   'quote.desc.Events':
-    'Καθαρισμός μετά από εκδήλωση. Η τιμή ξεκινά από €52 για 4 ώρες και 40 m².',
+    'Καθαρισμός μετά από εκδήλωση. Η τιμή ξεκινά από €64 για 4 ώρες και 40 m².',
+  'quote.desc.Ironing':
+    'Σιδέρωμα ρούχων. Από €16 για 10 τεμάχια — κάθε επόμενα 10 έχουν €2 έκπτωση.',
 
   // Service selection
   'services.title': 'Διάλεξε υπηρεσία',
   'services.step': 'Βήμα 2 από 3 — τι να καθαρίσουμε;',
   'services.myHome': 'Το Σπίτι μου',
   'services.crew': 'Συνεργείο Καθαρισμού',
+  'services.ironing': 'Σιδέρωμα',
   'service.Studio': 'Στούντιο',
   // Soft line breaks so long Greek compound words fit category chips.
   'service.1 Bedroom': '1 Υπνο\nδωμάτιο',
@@ -107,6 +131,7 @@ const el = {
   'service.3 Bedroom': '3 Υπνο\nδωμάτια',
   'service.Deep Cleaning': 'Βαθύς\nΚαθαρισμός',
   'service.Events': 'Εκδηλώσεις',
+  'service.Ironing': 'Σιδέρωμα',
 
   // Summary
   'summary.title': 'Σύνοψη κράτησης',
@@ -128,6 +153,11 @@ const el = {
   'summary.withoutSupplies': 'Χωρίς υλικά',
   'summary.addSupplies': 'Προσθήκη υλικών',
   'summary.changeSupplies': 'Αλλαγή υλικών',
+  'summary.extrasTitle': 'Έξτρα υπηρεσίες',
+  'summary.extrasHint': 'Πρόσθεσε σιδέρωμα ή Hoover στην κράτηση.',
+  'summary.extrasHintDeep': 'Πρόσθεσε σιδέρωμα, καθαρισμό φούρνου ή τζάκι στην κράτηση.',
+  'summary.extras': 'Έξτρα υπηρεσίες',
+  'summary.serviceFee': 'Χρέωση υπηρεσίας',
   'summary.continue': 'Συνέχεια',
   'summary.orLogin': 'Έχεις λογαριασμό; Σύνδεση',
   'summary.loginPrompt': 'Συνδέσου ή δημιούργησε λογαριασμό για να ολοκληρώσεις την κράτηση.',
@@ -216,14 +246,15 @@ const el = {
 
   // Account
   'account.title': 'Λογαριασμός',
-  'account.guestTitle': 'Καλώς ήρθες στο EagleClean',
+  'account.guestTitle': 'Καλώς ήρθες στο Cleanovox',
   'account.guestSubtitle':
     'Συνδέσου για να διαχειρίζεσαι κρατήσεις, παραγγελίες και τη συνδρομή σου σε ένα μέρος.',
   'account.whyJoin': 'Τι κερδίζεις',
   'account.highlightBookings': 'Οι κρατήσεις σου',
   'account.highlightBookingsBody': 'Ιστορικό, επερχόμενες επισκέψεις και εύκολες επανακρατήσεις.',
   'account.highlightMember': 'Συνδρομή μέλους',
-  'account.highlightMemberBody': 'Εκπτώσεις, προτεραιότητα και σταθερή καθαρίστρια.',
+  'account.highlightMemberBody':
+    'Εκπτώσεις, προτεραιότητα και επιλογή αγαπημένης καθαρίστριας.',
   'account.highlightOrders': 'Αγορά προϊόντων',
   'account.highlightOrdersBody': 'Παρακολούθησε παραγγελίες από το marketplace.',
   'account.welcomeBack': 'Καλώς όρισες',
@@ -232,10 +263,15 @@ const el = {
   'account.perk1': '10% έκπτωση σε κάθε κράτηση',
   'account.perk2': 'Δωρεάν προτεραιότητα στις κρατήσεις',
   'account.perk3': 'Δωρεάν ακύρωση ή αλλαγή μέχρι και λίγες ώρες πριν',
-  'account.perk4': 'Σταθερή καθαρίστρια',
-  'account.perk5': '1 δωρεάν έξτρα κάθε μήνα',
+  'account.perk4': 'Επιλογή αγαπημένης καθαρίστριας όταν είναι διαθέσιμη',
+  'account.perk5': '5% έκπτωση στο Cleanovox marketplace',
   'account.perk6': 'Πόντοι επιβράβευσης που μετατρέπονται σε δωρεάν ώρες καθαρισμού',
   'account.become': 'Γίνε μέλος',
+  'account.memberActive': 'Η συνδρομή σου είναι ενεργή',
+  'account.memberRenews': 'Ανανεώνεται {date}',
+  'account.membershipPay': 'Πληρωμή €14.99 / μήνα',
+  'account.membershipSuccessTitle': 'Καλώς ήρθες',
+  'account.membershipSuccessBody': 'Η μηνιαία συνδρομή €14.99 ενεργοποιήθηκε.',
   'account.sectionActivity': 'Δραστηριότητα',
   'account.sectionSettings': 'Ρυθμίσεις',
   'account.orders': 'Ιστορικό παραγγελιών',
@@ -406,6 +442,12 @@ const en: Record<TranslationKey, string> = {
   'quote.indicative': 'Indicative',
   'quote.indicativeHint':
     '€13/hour · 40 m² included (from €26 / 2 hours) · +€0.50 per extra m². Extra hours €13.',
+  'quote.indicativeHintEvents':
+    '€16/hour · 40 m² included (from €64 / 4 hours) · +€0.50 per extra m². Extra hours €16.',
+  'quote.indicativeHintIroning':
+    '€16 / 10 pieces · €2 off every extra 10 pieces. Tap Other to enter any amount.',
+  'quote.indicativeHintDeep':
+    '€18/hour · 40 m² included (from €54 / 3 hours) · +€0.50 per extra m². Extra hours €18.',
   'quote.included': 'Included',
   'quote.includedSqm': '{n} m²',
   'quote.overage': '+{price} extra',
@@ -417,6 +459,21 @@ const en: Record<TranslationKey, string> = {
   'quote.bulletBroom': 'Broom',
   'quote.bulletMop': 'Mop',
   'quote.bulletSurfaces': 'Surfaces',
+  'quote.bulletToilet': 'Toilet cleaning',
+  'quote.bulletTrash': 'Trash collection',
+  'quote.bulletClothes': 'Clothes & shirts',
+  'quote.bulletSteam': 'Steam ironing',
+  'quote.bulletHoover': 'Hoover',
+  'quote.bulletAluminum': 'Aluminum doors',
+  'quote.bulletWindows': 'Windows',
+  'quote.bulletCupboards': 'Cupboards',
+  'quote.bulletFridge': 'Fridge',
+  'quote.pieces': 'Pieces',
+  'quote.piecesPack': '10 pieces',
+  'quote.piecesValue': '{n} pcs',
+  'quote.piecesUnit': 'pcs',
+  'quote.piecesPlaceholder': 'e.g. 25',
+  'quote.piecesError': 'Enter how many pieces you want ironed.',
   'quote.desc.Studio':
     'Studio clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.1 Bedroom':
@@ -426,20 +483,24 @@ const en: Record<TranslationKey, string> = {
   'quote.desc.3 Bedroom':
     'Larger home clean. Price starts at €26 for 2 hours and 40 m².',
   'quote.desc.Deep Cleaning':
-    'Deep clean. Price starts at €39 for 3 hours and 40 m².',
+    'Deep clean. Price starts at €54 for 3 hours and 40 m².',
   'quote.desc.Events':
-    'Post-event clean. Price starts at €52 for 4 hours and 40 m².',
+    'Post-event clean. Price starts at €64 for 4 hours and 40 m².',
+  'quote.desc.Ironing':
+    'Clothes ironing. From €16 for 10 pieces — €2 off every extra 10.',
 
   'services.title': 'Choose a service',
   'services.step': 'Step 2 of 3 — what should we clean?',
   'services.myHome': 'My Home',
   'services.crew': 'Cleaning Crew',
+  'services.ironing': 'Ironing',
   'service.Studio': 'Studio',
   'service.1 Bedroom': '1 Bedroom',
   'service.2 Bedroom': '2 Bedroom',
   'service.3 Bedroom': '3 Bedroom',
   'service.Deep Cleaning': 'Deep Cleaning',
   'service.Events': 'Events',
+  'service.Ironing': 'Ironing',
 
   'summary.title': 'Booking summary',
   'summary.subtitle': 'Review your cleaning before payment.',
@@ -460,6 +521,11 @@ const en: Record<TranslationKey, string> = {
   'summary.withoutSupplies': 'No supplies',
   'summary.addSupplies': 'Add supplies',
   'summary.changeSupplies': 'Change supplies',
+  'summary.extrasTitle': 'Extra services',
+  'summary.extrasHint': 'Add ironing or Hoover to this booking.',
+  'summary.extrasHintDeep': 'Add ironing, oven cleaning, or a fireplace clean to this booking.',
+  'summary.extras': 'Extra services',
+  'summary.serviceFee': 'Service fee',
   'summary.continue': 'Continue',
   'summary.orLogin': 'Have an account? Log in',
   'summary.loginPrompt': 'Log in or create an account to confirm your booking.',
@@ -543,14 +609,15 @@ const en: Record<TranslationKey, string> = {
   'plans.platinum.f4': 'Discounts on cleaning supplies',
 
   'account.title': 'Account',
-  'account.guestTitle': 'Welcome to EagleClean',
+  'account.guestTitle': 'Welcome to Cleanovox',
   'account.guestSubtitle':
     'Sign in to manage bookings, orders and membership in one place.',
   'account.whyJoin': 'Why join',
   'account.highlightBookings': 'Your bookings',
   'account.highlightBookingsBody': 'History, upcoming visits and easy rebooking.',
   'account.highlightMember': 'Membership perks',
-  'account.highlightMemberBody': 'Discounts, priority slots and a regular cleaner.',
+  'account.highlightMemberBody':
+    'Discounts, priority slots and your favorite cleaner when available.',
   'account.highlightOrders': 'Marketplace orders',
   'account.highlightOrdersBody': 'Track cleaning product deliveries.',
   'account.welcomeBack': 'Welcome back',
@@ -559,10 +626,15 @@ const en: Record<TranslationKey, string> = {
   'account.perk1': '10% discount on every booking',
   'account.perk2': 'Free priority on bookings',
   'account.perk3': 'Free cancellation or change up to a few hours before',
-  'account.perk4': 'Your own regular cleaner',
-  'account.perk5': '1 free extra every month',
+  'account.perk4': 'Choose your favorite cleaner when she’s available',
+  'account.perk5': '5% off the Cleanovox marketplace',
   'account.perk6': 'Reward points that convert into free cleaning hours',
   'account.become': 'Become a member',
+  'account.memberActive': 'Your membership is active',
+  'account.memberRenews': 'Renews {date}',
+  'account.membershipPay': 'Pay €14.99 / month',
+  'account.membershipSuccessTitle': 'Welcome',
+  'account.membershipSuccessBody': 'Your €14.99 monthly membership is now active.',
   'account.sectionActivity': 'Activity',
   'account.sectionSettings': 'Settings',
   'account.orders': 'Order history',

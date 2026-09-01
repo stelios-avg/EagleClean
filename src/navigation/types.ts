@@ -3,19 +3,28 @@ import type { ShopCategorySlug } from '../constants/shop';
 
 // ---------- Domain types used by the booking flow ----------
 
-export type ServiceCategory = 'my-home' | 'cleaning-crew';
+export type ServiceCategory = 'my-home' | 'cleaning-crew' | 'ironing';
 
 export type HomeSize = 'Studio' | '1 Bedroom' | '2 Bedroom' | '3 Bedroom';
 export type CrewService = 'Deep Cleaning' | 'Events';
+export type IroningService = 'Ironing';
+export type BookingOption = HomeSize | CrewService | IroningService;
 
 export const HOME_SIZES: HomeSize[] = ['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom'];
 export const CREW_SERVICES: CrewService[] = ['Deep Cleaning', 'Events'];
 
-export function isHomeSize(option: HomeSize | CrewService): option is HomeSize {
+export function isHomeSize(option: BookingOption): option is HomeSize {
   return (HOME_SIZES as string[]).includes(option);
 }
 
-export function categoryFor(option: HomeSize | CrewService): ServiceCategory {
+export function isIroning(option: BookingOption): option is IroningService {
+  return option === 'Ironing';
+}
+
+export function categoryFor(option: BookingOption): ServiceCategory {
+  if (isIroning(option)) {
+    return 'ironing';
+  }
   return isHomeSize(option) ? 'my-home' : 'cleaning-crew';
 }
 
@@ -33,7 +42,7 @@ export function homeSizeFromRooms(rooms: number): HomeSize {
   return '3 Bedroom';
 }
 
-export function roomsFromOption(option: HomeSize | CrewService): number {
+export function roomsFromOption(option: BookingOption): number {
   switch (option) {
     case 'Studio':
       return 0;
@@ -58,19 +67,25 @@ export type BookingSupply = {
   quantity: number;
 };
 
+export type BookingExtraId = 'ironing' | 'hoover' | 'oven' | 'fireplace';
+
 export type BookingSelection = {
   /** ISO date string, e.g. "2026-08-01" */
   date: string;
   /** Final visit range including extra hours, e.g. "08:00 - 12:00" */
   timeSlot: string;
   category: ServiceCategory;
-  option: HomeSize | CrewService;
+  option: BookingOption;
   /** Bedroom count used for the quote (Studio = 0). */
   rooms: number;
-  /** Size of the home/venue in m² — mandatory before continuing. */
+  /** Size of the home/venue in m² — mandatory before continuing. Unused for ironing. */
   squareMeters: number;
+  /** Piece count for ironing. */
+  pieces?: number;
   /** Hours added on top of the base slot via the + stepper. */
   extraHours: number;
+  /** Add-on services chosen on the summary (ironing, hoover, oven, fireplace). */
+  extras?: BookingExtraId[];
   /** Set on the summary step: `[]` means continue without supplies. */
   supplies?: BookingSupply[];
 };
@@ -90,11 +105,12 @@ export type ContactDetails = {
 
 export type BookingStackParamList = {
   /** First step: rooms + sqm → indicative "from" price, then calendar. */
-  Quote: { option?: HomeSize | CrewService } | undefined;
+  Quote: { option?: BookingOption } | undefined;
   Calendar: {
-    option: HomeSize | CrewService;
+    option: BookingOption;
     rooms: number;
     squareMeters: number;
+    pieces?: number;
   };
   BookingSummary: BookingSelection;
   BookingSupplies: BookingSelection;

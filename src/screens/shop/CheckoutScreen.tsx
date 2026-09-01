@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FormInput, PillButton, SubpageHeader, Subtitle } from '../../components/ui';
 import { UseMyLocationButton } from '../../components/UseMyLocationButton';
-import { formatEuros } from '../../constants/payments';
+import { SERVICE_FEE_CENTS, formatEuros, withServiceFee } from '../../constants/payments';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useI18n } from '../../i18n/LanguageContext';
@@ -165,8 +165,12 @@ export default function CheckoutScreen({ navigation }: Props) {
               ))}
               <View style={styles.divider} />
               <View style={styles.summaryRow}>
+                <Text style={styles.summaryName}>{t('summary.serviceFee')}</Text>
+                <Text style={styles.summaryPrice}>{formatEuros(SERVICE_FEE_CENTS)}</Text>
+              </View>
+              <View style={styles.summaryRow}>
                 <Text style={styles.totalLabel}>{t('shop.total')}</Text>
-                <Text style={styles.totalValue}>{formatEuros(totalCents)}</Text>
+                <Text style={styles.totalValue}>{formatEuros(withServiceFee(totalCents))}</Text>
               </View>
             </View>
 

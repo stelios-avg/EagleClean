@@ -1,5 +1,5 @@
 /**
- * EagleClean design tokens — ink + the exact turquoise from the
+ * Cleanovox design tokens — ink + the exact turquoise from the
  * category icons (`#30CCCC`), not gold or generic app-blue.
  */
 export const colors = {

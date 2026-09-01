@@ -34,7 +34,7 @@ export default function PreloadScreen({ onDone }: { onDone: () => void }) {
   return (
     <Animated.View style={[styles.root, { opacity }]}>
       <Animated.View style={{ transform: [{ scale }] }}>
-        <BrandLogo chip={false} height={150} />
+        <BrandLogo chip={false} height={168} />
       </Animated.View>
     </Animated.View>
   );
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 100,
-    backgroundColor: '#F3FAFA',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -8,6 +8,7 @@ import {
   MERCHANT_COUNTRY_CODE,
   MERCHANT_NAME,
   STRIPE_PUBLISHABLE_KEY,
+  SERVICE_FEE_CENTS,
   bookingGrandTotalCents,
   formatEuros,
 } from '../../constants/payments';
@@ -27,7 +28,9 @@ export default function PaymentScreen({ navigation, route }: Props) {
     route.params.extraHours,
     route.params.squareMeters,
     route.params.rooms,
-    route.params.supplies ?? []
+    route.params.supplies ?? [],
+    route.params.pieces,
+    route.params.extras
   );
 
   const [processing, setProcessing] = useState(false);
@@ -105,6 +108,9 @@ export default function PaymentScreen({ navigation, route }: Props) {
       <View style={styles.totalCard}>
         <Text style={styles.totalLabel}>{t('payment.total')}</Text>
         <Text style={styles.totalValue}>{formatEuros(amount)}</Text>
+        <Text style={styles.totalMeta}>
+          {t('summary.serviceFee')} · {formatEuros(SERVICE_FEE_CENTS)}
+        </Text>
         <Text style={styles.totalMeta}>
           {t(`service.${route.params.option}`)} · {route.params.date} ·{' '}
           {route.params.timeSlot}

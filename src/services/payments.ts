@@ -16,8 +16,10 @@ export async function createPaymentIntent(
       option: booking.option,
       extraHours: booking.extraHours,
       squareMeters: booking.squareMeters,
+      pieces: booking.pieces,
       rooms: booking.rooms,
       supplies: booking.supplies ?? [],
+      extras: booking.extras ?? [],
       date: booking.date,
       timeSlot: booking.timeSlot,
       contactName: booking.contact.name,
@@ -35,4 +37,48 @@ export async function createPaymentIntent(
   }
 
   return result;
+}
+
+export type MembershipCheckoutResult = {
+  clientSecret?: string;
+  subscriptionId?: string;
+  paymentIntentId?: string | null;
+  amount?: number;
+  alreadyActive?: boolean;
+  status?: string;
+  renewsAt?: string | null;
+};
+
+/** Starts or confirms the €14.99/month Stripe subscription. */
+export async function startMembership(): Promise<MembershipCheckoutResult> {
+  const { data, error } = await supabase.functions.invoke('create-membership', {
+    body: {},
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  const result = data as MembershipCheckoutResult & { error?: string };
+  if (result?.error) {
+    throw new Error(result.error);
+  }
+  if (result?.alreadyActive) {
+    return result;
+  }
+  if (!result?.clientSecret) {
+    throw new Error('Could not start membership payment.');
+  }
+  return result;
+}
+
+export async function confirmMembership(subscriptionId: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('create-membership', {
+    body: { confirm: true, subscriptionId },
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  const result = data as { error?: string; status?: string };
+  if (result?.error) {
+    throw new Error(result.error);
+  }
 }

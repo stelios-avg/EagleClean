@@ -1,5 +1,5 @@
 import type { BookedRange } from '../constants/booking';
-import { bookingGrandTotalCents } from '../constants/payments';
+import { BOOKING_EXTRAS, SERVICE_FEE_CENTS, allowedExtras, bookingGrandTotalCents } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { BookingSelection, ContactDetails } from '../navigation/types';
 import type { Booking, BookingStatus } from '../types/database';
@@ -18,6 +18,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
   } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
 
   const supplies = input.supplies ?? [];
+  const extras = allowedExtras(input.option, input.extras);
   const pushToken = getCachedPushToken() ?? (await registerPushNotifications());
 
   const row = {
@@ -32,23 +33,51 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking 
     contact_address: input.contact.address.trim(),
     contact_lat: input.contact.latitude ?? null,
     contact_lng: input.contact.longitude ?? null,
-    square_meters: input.squareMeters,
+    square_meters: input.option === 'Ironing' ? input.pieces ?? null : input.squareMeters,
     extra_hours: input.extraHours,
     amount_cents: bookingGrandTotalCents(
       input.option,
       input.extraHours,
       input.squareMeters,
       input.rooms,
-      supplies
+      supplies,
+      input.pieces,
+      extras
     ),
-    supplies: supplies.map((item) => ({
-      product_id: item.productId,
-      name_el: item.nameEl,
-      name_en: item.nameEn,
-      variant_label: item.variantLabel,
-      unit_price_cents: item.unitPriceCents,
-      quantity: item.quantity,
-    })),
+    supplies: [
+      ...supplies.map((item) => ({
+        product_id: item.productId,
+        name_el: item.nameEl,
+        name_en: item.nameEn,
+        variant_label: item.variantLabel,
+        unit_price_cents: item.unitPriceCents,
+        quantity: item.quantity,
+      })),
+      ...extras.flatMap((id) => {
+        const extra = BOOKING_EXTRAS.find((item) => item.id === id);
+        if (!extra) {
+          return [];
+        }
+        return [
+          {
+            product_id: `extra:${extra.id}`,
+            name_el: extra.nameEl,
+            name_en: extra.nameEn,
+            variant_label: null as string | null,
+            unit_price_cents: extra.priceCents,
+            quantity: 1,
+          },
+        ];
+      }),
+      {
+        product_id: 'fee:service',
+        name_el: 'Service fee',
+        name_en: 'Service fee',
+        variant_label: null as string | null,
+        unit_price_cents: SERVICE_FEE_CENTS,
+        quantity: 1,
+      },
+    ],
     status: input.status ?? 'paid',
     payment_intent_id: input.paymentIntentId ?? null,
     push_token: pushToken,
