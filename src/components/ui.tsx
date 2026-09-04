@@ -303,7 +303,7 @@ export function SubpageHeader({
         style={styles.subpageBack}
         accessibilityLabel="Back"
       >
-        <Ionicons name="chevron-back" size={24} color={colors.textOnDark} />
+        <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
       </PressableScale>
       <Text style={styles.subpageTitle} numberOfLines={1}>
         {title}
@@ -341,11 +341,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heading: {
-    fontSize: 30,
+    fontSize: 28,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
-    letterSpacing: -0.5,
-    lineHeight: 38,
+    letterSpacing: -0.6,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 15,
@@ -422,11 +422,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.row,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 16,
   },
   listRowIcon: {
@@ -511,7 +509,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.ink,
+    backgroundColor: colors.background,
     paddingHorizontal: 10,
     paddingBottom: 12,
   },
@@ -524,7 +522,7 @@ const styles = StyleSheet.create({
   subpageTitle: {
     flex: 1,
     textAlign: 'center',
-    color: colors.textOnDark,
+    color: colors.textPrimary,
     fontSize: 17,
     fontFamily: fonts.bold,
   },

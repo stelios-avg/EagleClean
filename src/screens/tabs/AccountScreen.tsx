@@ -553,11 +553,9 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   menuCard: {
-    borderRadius: radii.row,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radii.card,
     overflow: 'hidden',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   menuRow: {
     flexDirection: 'row',

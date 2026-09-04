@@ -39,7 +39,16 @@ async function ensureAndroidChannel() {
 
 /** Asks permission and stores an Expo push token when the device supports it. */
 export async function registerPushNotifications(): Promise<string | null> {
-  await ensureAndroidChannel();
+  // SDK 55+: remote push in Expo Go on Android throws instead of warning.
+  if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+    return null;
+  }
+
+  try {
+    await ensureAndroidChannel();
+  } catch {
+    return null;
+  }
 
   const existing = await Notifications.getPermissionsAsync();
   let status = existing.status;
@@ -48,10 +57,6 @@ export async function registerPushNotifications(): Promise<string | null> {
     status = asked.status;
   }
   if (status !== 'granted') {
-    return null;
-  }
-
-  if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
     return null;
   }
 

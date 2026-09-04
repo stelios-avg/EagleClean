@@ -1,14 +1,16 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo } from '../components/ui';
 import HomeScreen from '../screens/tabs/HomeScreen';
+import PlansScreen from '../screens/tabs/PlansScreen';
 import MarketplaceScreen from '../screens/tabs/MarketplaceScreen';
 import AccountScreen from '../screens/tabs/AccountScreen';
 import { useI18n } from '../i18n/LanguageContext';
-import { colors, fonts } from '../theme';
+import type { TranslationKey } from '../i18n/translations';
+import { colors, fonts, shadows } from '../theme';
 import type { MainTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -19,8 +21,16 @@ const TAB_ICONS: Record<
   { idle: keyof typeof Ionicons.glyphMap; active: keyof typeof Ionicons.glyphMap }
 > = {
   Home: { idle: 'home-outline', active: 'home' },
+  Plans: { idle: 'cube-outline', active: 'cube' },
   Marketplace: { idle: 'bag-handle-outline', active: 'bag-handle' },
   Account: { idle: 'person-circle-outline', active: 'person-circle' },
+};
+
+const TAB_LABELS: Record<keyof MainTabParamList, TranslationKey> = {
+  Home: 'tab.home',
+  Plans: 'tab.plans',
+  Marketplace: 'tab.marketplace',
+  Account: 'tab.account',
 };
 
 /** Shrinks long Greek labels instead of truncating with ellipsis. */
@@ -30,25 +40,11 @@ function TabLabel({ label, color }: { label: string; color: string }) {
       style={[styles.tabLabel, { color }]}
       numberOfLines={1}
       adjustsFontSizeToFit
-      minimumFontScale={0.72}
+      minimumFontScale={0.68}
       allowFontScaling={false}
     >
       {label}
     </Text>
-  );
-}
-
-/** Photo behind the logo in the Marketplace header, dimmed for readability. */
-function MarketplaceHeaderBackground() {
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <Image
-        source={require('../../assets/images/marketplace-products.png')}
-        style={styles.headerPhoto}
-        resizeMode="cover"
-      />
-      <View style={styles.headerPhotoDim} />
-    </View>
   );
 }
 
@@ -61,17 +57,17 @@ export default function MainTabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         animation: 'shift',
-        headerStyle: { backgroundColor: colors.ink },
+        headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,
         headerTitleAlign: 'center',
-        headerTitle: () => <BrandLogo height={34} />,
+        headerTitle: () => <BrandLogo height={36} chip={false} />,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          height: 56 + bottomPad,
-          paddingTop: 6,
+          borderTopWidth: 0,
+          height: 60 + bottomPad,
+          paddingTop: 8,
           paddingBottom: bottomPad,
+          ...shadows.bar,
         },
         tabBarItemStyle: {
           paddingHorizontal: 0,
@@ -80,16 +76,7 @@ export default function MainTabNavigator() {
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarAllowFontScaling: false,
         tabBarLabel: ({ color }) => (
-          <TabLabel
-            label={
-              route.name === 'Home'
-                ? t('tab.home')
-                : route.name === 'Marketplace'
-                  ? t('tab.marketplace')
-                  : t('tab.account')
-            }
-            color={color}
-          />
+          <TabLabel label={t(TAB_LABELS[route.name])} color={color} />
         ),
         tabBarIcon: ({ color, focused }) => (
           <Ionicons
@@ -106,11 +93,15 @@ export default function MainTabNavigator() {
         options={{ title: t('tab.home'), headerShown: false }}
       />
       <Tab.Screen
+        name="Plans"
+        component={PlansScreen}
+        options={{ title: t('tab.plans'), headerShown: false }}
+      />
+      <Tab.Screen
         name="Marketplace"
         component={MarketplaceScreen}
         options={{
           title: t('tab.marketplace'),
-          headerBackground: MarketplaceHeaderBackground,
         }}
       />
       <Tab.Screen
@@ -130,17 +121,5 @@ const styles = StyleSheet.create({
     marginTop: 2,
     width: '100%',
     paddingHorizontal: 2,
-  },
-  headerPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  headerPhotoDim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(11,12,16,0.35)',
   },
 });

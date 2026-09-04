@@ -1,8 +1,6 @@
-import React from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
-  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,18 +8,24 @@ import {
   type ImageSourcePropType,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { BrandLogo, ImageCard, LanguageToggle, PillButton } from '../../components/ui';
+import { BrandLogo, LanguageToggle } from '../../components/ui';
 import { PressableScale } from '../../components/PressableScale';
-import { SERVICE_PRICES, formatEuros } from '../../constants/payments';
+import {
+  DEEP_HOUR_RATE_CENTS,
+  EVENTS_HOUR_RATE_CENTS,
+  HOUR_RATE_CENTS,
+} from '../../constants/booking';
+import { IRONING_FIRST_PACK_CENTS, IRONING_PACK_SIZE } from '../../constants/payments';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../i18n/LanguageContext';
 import type { TranslationKey } from '../../i18n/translations';
-import { colors, fonts, radii, spacing } from '../../theme';
+import { getMyProfile } from '../../services/profile';
+import { colors, fonts, radii, shadows, spacing } from '../../theme';
 import type {
   BookingOption,
   MainTabParamList,
@@ -33,98 +37,101 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
-type ServiceOption = BookingOption;
+type ServiceCard = {
+  option: BookingOption;
+  titleKey: TranslationKey;
+  image: ImageSourcePropType;
+  rate: string;
+};
 
-const CATEGORIES: { option: ServiceOption; icon: ImageSourcePropType }[] = [
-  { option: 'Studio', icon: require('../../../assets/images/icons/cat-studio.png') },
-  { option: '1 Bedroom', icon: require('../../../assets/images/icons/cat-1bed.png') },
-  { option: '2 Bedroom', icon: require('../../../assets/images/icons/cat-2bed.png') },
-  { option: '3 Bedroom', icon: require('../../../assets/images/icons/cat-3bed.png') },
-  { option: 'Deep Cleaning', icon: require('../../../assets/images/icons/cat-deep.png') },
-  { option: 'Events', icon: require('../../../assets/images/icons/cat-events.png') },
-  { option: 'Ironing', icon: require('../../../assets/images/icons/cat-ironing.png') },
-];
+function euroPlain(cents: number): string {
+  return cents % 100 === 0 ? `€${cents / 100}` : `€${(cents / 100).toFixed(2)}`;
+}
 
-const FEATURED: { option: ServiceOption; image: ImageSourcePropType }[] = [
-  { option: 'Ironing', image: require('../../../assets/images/service-ironing.jpg') },
-  { option: 'Deep Cleaning', image: require('../../../assets/images/service-home.png') },
-  { option: 'Events', image: require('../../../assets/images/service-crew.png') },
-  { option: '2 Bedroom', image: require('../../../assets/images/hero-welcome.png') },
-];
+function greetingKey(): TranslationKey {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return 'home.greetMorning';
+  }
+  if (hour < 18) {
+    return 'home.greetAfternoon';
+  }
+  return 'home.greetEvening';
+}
 
-/** Monthly membership plans, shown to signed-in customers. Stripe checkout arrives in Phase 3. */
-const PLANS: {
-  id: 'silver' | 'gold' | 'platinum';
-  name: string;
-  pricePerMonth: number;
-  tint: string;
-  featureKeys: TranslationKey[];
-  popular?: boolean;
-}[] = [
-  {
-    id: 'silver',
-    name: 'Silver',
-    pricePerMonth: 149,
-    tint: '#9BA3B5',
-    featureKeys: ['plans.silver.f1', 'plans.silver.f2', 'plans.silver.f3'],
-  },
-  {
-    id: 'gold',
-    name: 'Gold',
-    pricePerMonth: 279,
-    tint: '#D4A017',
-    featureKeys: ['plans.gold.f1', 'plans.gold.f2', 'plans.gold.f3'],
-    popular: true,
-  },
-  {
-    id: 'platinum',
-    name: 'Platinum',
-    pricePerMonth: 499,
-    tint: '#8C6A2F',
-    featureKeys: [
-      'plans.platinum.f1',
-      'plans.platinum.f2',
-      'plans.platinum.f3',
-      'plans.platinum.f4',
-    ],
-  },
-];
-
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle} maxFontSizeMultiplier={1.15}>
-        {title}
-      </Text>
-      <PressableScale onPress={onAction} hitSlop={8}>
-        <Text style={styles.sectionAction} maxFontSizeMultiplier={1.1}>
-          {actionLabel}
-        </Text>
-      </PressableScale>
-    </View>
-  );
+function firstNameFrom(fullName?: string | null): string | null {
+  const name = fullName?.trim().split(/\s+/)[0];
+  return name ? name : null;
 }
 
 export default function HomeScreen({ navigation }: Props) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuth();
+  const [firstName, setFirstName] = useState<string | null>(null);
 
-  const startBooking = () => navigation.navigate('BookingFlow');
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) {
+        setFirstName(null);
+        return;
+      }
+      let active = true;
+      getMyProfile()
+        .then((profile) => {
+          if (active) {
+            setFirstName(firstNameFrom(profile.full_name));
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setFirstName(null);
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }, [isAuthenticated])
+  );
 
-  const selectPlan = (name: string) =>
-    // Phase 3: Stripe subscription checkout for the selected plan.
-    Alert.alert(name, t('account.membershipSoon'));
+  const hello = firstName
+    ? t('home.helloName', { greeting: t(greetingKey()), name: firstName })
+    : t('home.hello', { greeting: t(greetingKey()) });
 
-  const bookService = (option: ServiceOption) =>
+  const services = useMemo<ServiceCard[]>(
+    () => [
+      {
+        option: 'Studio',
+        titleKey: 'home.regular',
+        image: require('../../../assets/images/service-home.png'),
+        rate: t('home.perHour', { price: euroPlain(HOUR_RATE_CENTS) }),
+      },
+      {
+        option: 'Deep Cleaning',
+        titleKey: 'service.Deep Cleaning',
+        image: require('../../../assets/images/hero-welcome.png'),
+        rate: t('home.perHour', { price: euroPlain(DEEP_HOUR_RATE_CENTS) }),
+      },
+      {
+        option: 'Events',
+        titleKey: 'service.Events',
+        image: require('../../../assets/images/service-crew.png'),
+        rate: t('home.perHour', { price: euroPlain(EVENTS_HOUR_RATE_CENTS) }),
+      },
+      {
+        option: 'Ironing',
+        titleKey: 'service.Ironing',
+        image: require('../../../assets/images/service-ironing.jpg'),
+        rate: t('home.fromPack', {
+          price: euroPlain(IRONING_FIRST_PACK_CENTS),
+          count: String(IRONING_PACK_SIZE),
+        }),
+      },
+    ],
+    [t]
+  );
+
+  const bookService = (option: BookingOption) =>
     navigation.navigate('BookingFlow', {
       screen: 'Quote',
       params: { option },
@@ -133,156 +140,76 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <ScrollView
       style={styles.root}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: 36 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Hero */}
-      <ImageBackground
-        source={require('../../../assets/images/hero-welcome.png')}
-        style={styles.heroImage}
-        resizeMode="cover"
-      >
-        <LinearGradient
-          colors={['rgba(11,12,16,0.55)', 'rgba(11,12,16,0.35)', 'rgba(11,12,16,0.62)']}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={[styles.hero, { paddingTop: insets.top + 10 }]}>
-          <View style={styles.heroTopRow}>
-            <BrandLogo height={52} />
-            <View style={styles.langCorner}>
-              <LanguageToggle onDark />
-            </View>
-          </View>
-          <Text style={styles.tagline} maxFontSizeMultiplier={1.15}>
-            {t('home.tagline')}
-          </Text>
-
-          {/* Search-style booking CTA */}
-          <PressableScale onPress={startBooking} style={styles.searchBar}>
-            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.searchText}>{t('home.searchCta')}</Text>
-            <View style={styles.searchButton}>
-              <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
-            </View>
-          </PressableScale>
+      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
+        <BrandLogo height={58} chip={false} />
+        <View style={[styles.langCorner, { top: insets.top + 12 }]}>
+          <LanguageToggle />
         </View>
-      </ImageBackground>
-
-      {/* Categories */}
-      <SectionHeader
-        title={t('home.categories')}
-        actionLabel={t('home.viewAll')}
-        onAction={startBooking}
-      />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesRow}
-      >
-        {CATEGORIES.map(({ option, icon }) => (
-          <PressableScale key={option} onPress={() => bookService(option)} style={styles.category}>
-            <View style={styles.categoryCircle}>
-              <Image source={icon} style={styles.categoryIcon} resizeMode="contain" />
-            </View>
-            <Text
-              style={styles.categoryLabel}
-              numberOfLines={3}
-              maxFontSizeMultiplier={1.1}
-            >
-              {t(`service.${option}`)}
-            </Text>
-          </PressableScale>
-        ))}
-      </ScrollView>
-
-      {/* Featured */}
-      <SectionHeader
-        title={t('home.featured')}
-        actionLabel={t('home.viewAll')}
-        onAction={startBooking}
-      />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.featuredRow}
-      >
-        {FEATURED.map(({ option, image }) => (
-          <PressableScale
-            key={option}
-            onPress={() => bookService(option)}
-            style={styles.featuredCard}
-          >
-            <View style={styles.featuredImageWrap}>
-              <Image source={image} style={styles.featuredImage} resizeMode="cover" />
-              <View style={styles.pricePill}>
-                <Text style={styles.priceText}>
-                  {t('quote.from', { price: formatEuros(SERVICE_PRICES[option]) })}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.featuredTitle} maxFontSizeMultiplier={1.15}>
-              {t(`service.${option}`)}
-            </Text>
-            <View style={styles.starsRow}>
-              {Array.from({ length: 5 }, (_, i) => (
-                <Ionicons key={i} name="star-outline" size={14} color={colors.tabInactive} />
-              ))}
-            </View>
-          </PressableScale>
-        ))}
-      </ScrollView>
-
-      {/* Marketplace teaser */}
-      <View style={styles.marketSection}>
-        <ImageCard
-          image={require('../../../assets/images/marketplace-products.png')}
-          title={t('home.essentials')}
-          linkLabel={t('home.shopLink')}
-          height={200}
-          onPress={() => navigation.navigate('Marketplace')}
-        />
       </View>
 
-      {/* Membership plans — only for signed-in customers */}
-      {isAuthenticated && (
-        <View style={styles.plansSection}>
-          <Text style={styles.sectionTitle}>{t('plans.title')}</Text>
-          <Text style={styles.plansSubtitle}>{t('plans.subtitle')}</Text>
-          {PLANS.map((plan) => (
-            <View
-              key={plan.id}
-              style={[styles.planCard, plan.popular && styles.planCardPopular]}
-            >
-              {plan.popular && (
-                <View style={styles.popularBadge}>
-                  <Text style={styles.popularBadgeText}>{t('plans.popular')}</Text>
-                </View>
-              )}
-              <View style={styles.planHeader}>
-                <View style={[styles.planDot, { backgroundColor: plan.tint }]} />
-                <Text style={styles.planName}>{plan.name}</Text>
-                <View style={styles.planPriceWrap}>
-                  <Text style={styles.planPrice}>{plan.pricePerMonth}€</Text>
-                  <Text style={styles.planPer}>{t('plans.perMonth')}</Text>
-                </View>
-              </View>
-              <View style={styles.planFeatures}>
-                {plan.featureKeys.map((key) => (
-                  <View key={key} style={styles.planFeatureRow}>
-                    <Ionicons name="checkmark-circle" size={18} color={plan.tint} />
-                    <Text style={styles.planFeatureText}>{t(key)}</Text>
-                  </View>
-                ))}
-              </View>
-              <PillButton
-                label={t('plans.select')}
-                variant={plan.popular ? 'accent' : 'dark'}
-                onPress={() => selectPlan(plan.name)}
-              />
+      <View style={styles.intro}>
+        <Text style={styles.hello} maxFontSizeMultiplier={1.15}>
+          {hello}
+        </Text>
+        <Text style={styles.headline} maxFontSizeMultiplier={1.12}>
+          {t('home.headline')}
+        </Text>
+      </View>
+
+      <View style={styles.searchBlock}>
+        <Text style={styles.searchLabel}>{t('home.searchLabel')}</Text>
+        <PressableScale
+          onPress={() => navigation.navigate('BookingFlow')}
+          style={styles.searchBar}
+          accessibilityLabel={t('home.searchCta')}
+        >
+          <Ionicons name="search-outline" size={20} color={colors.textSecondary} />
+          <Text style={styles.searchText}>{t('home.searchCta')}</Text>
+          <View style={styles.searchPin}>
+            <Ionicons name="calendar-outline" size={18} color={colors.accentDeep} />
+          </View>
+        </PressableScale>
+      </View>
+
+      <Text style={styles.sectionTitle}>{t('home.services')}</Text>
+      <View style={styles.serviceGrid}>
+        {services.map((service) => (
+          <PressableScale
+            key={service.option}
+            onPress={() => bookService(service.option)}
+            style={styles.serviceCard}
+            accessibilityLabel={`${t(service.titleKey)}, ${service.rate}`}
+          >
+            <Text style={styles.serviceTitle} numberOfLines={2}>
+              {t(service.titleKey).replace(/\n/g, ' ')}
+            </Text>
+            <Text style={styles.serviceRate}>{service.rate}</Text>
+            <Image source={service.image} style={styles.serviceImage} resizeMode="cover" />
+            <View style={styles.serviceArrow}>
+              <Ionicons name="arrow-forward" size={16} color={colors.textOnDark} />
             </View>
-          ))}
+          </PressableScale>
+        ))}
+      </View>
+
+      <PressableScale
+        onPress={() => navigation.navigate('Marketplace')}
+        style={styles.marketCard}
+        accessibilityLabel={t('home.marketTitle')}
+      >
+        <View style={styles.marketCopy}>
+          <Text style={styles.marketTitle}>{t('home.marketTitle')}</Text>
+          <Text style={styles.marketHint}>{t('home.marketHint')}</Text>
         </View>
-      )}
+        <Image
+          source={require('../../../assets/images/marketplace-products.png')}
+          style={styles.marketImage}
+          resizeMode="cover"
+        />
+      </PressableScale>
     </ScrollView>
   );
 }
@@ -293,239 +220,151 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    paddingBottom: 26,
-  },
-  heroImage: {
-    borderBottomLeftRadius: radii.card,
-    borderBottomRightRadius: radii.card,
-    overflow: 'hidden',
-  },
-  hero: {
     paddingHorizontal: spacing.screen,
-    paddingBottom: 24,
-    gap: 14,
   },
-  heroTopRow: {
+  topBar: {
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 64,
+    marginBottom: 22,
   },
   langCorner: {
     position: 'absolute',
     right: 0,
-    top: 4,
+    top: 8,
   },
-  tagline: {
-    color: colors.textOnDark,
-    fontSize: 20,
+  intro: {
+    gap: 8,
+    marginBottom: 22,
+  },
+  hello: {
+    fontSize: 28,
     fontFamily: fonts.extraBold,
-    textAlign: 'center',
+    color: colors.textPrimary,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+  },
+  headline: {
+    fontSize: 18,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
     lineHeight: 26,
-    paddingHorizontal: 8,
+  },
+  searchBlock: {
+    gap: 8,
+    marginBottom: 28,
+  },
+  searchLabel: {
+    fontSize: 14,
+    fontFamily: fonts.semiBold,
+    color: colors.textPrimary,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     borderRadius: radii.row,
     paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
+    paddingRight: 8,
+    paddingVertical: 8,
+    minHeight: 58,
   },
   searchText: {
     flex: 1,
     fontSize: 15,
     fontFamily: fonts.medium,
     color: colors.textSecondary,
-    paddingVertical: 10,
   },
-  searchButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: colors.accent,
+  searchPin: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.screen,
-    marginTop: 22,
-    marginBottom: 12,
   },
   sectionTitle: {
-    flex: 1,
-    flexShrink: 1,
-    fontSize: 19,
+    fontSize: 22,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
-    paddingRight: 8,
-    lineHeight: 24,
+    letterSpacing: -0.4,
+    marginBottom: 14,
   },
-  sectionAction: {
-    flexShrink: 0,
+  serviceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+    marginBottom: 18,
+  },
+  serviceCard: {
+    width: '48%',
+    backgroundColor: colors.card,
+    borderRadius: radii.card,
+    padding: 14,
+    minHeight: 236,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  serviceTitle: {
+    fontSize: 16,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+    lineHeight: 21,
+  },
+  serviceRate: {
     fontSize: 13,
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
+    marginTop: 4,
+    marginBottom: 10,
   },
-  categoriesRow: {
-    paddingHorizontal: spacing.screen,
-    gap: 10,
-    paddingBottom: 4,
-  },
-  category: {
-    alignItems: 'center',
-    width: 118,
-  },
-  categoryCircle: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
+  serviceImage: {
+    width: '100%',
+    height: 122,
+    borderRadius: 18,
     backgroundColor: colors.surface,
+  },
+  serviceArrow: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.accentDeep,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  categoryIcon: {
-    width: 38,
-    height: 38,
-  },
-  categoryLabel: {
-    fontSize: 12,
-    fontFamily: fonts.semiBold,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 16,
-    width: '100%',
-  },
-  featuredRow: {
-    paddingHorizontal: spacing.screen,
-    gap: 14,
-  },
-  featuredCard: {
-    width: 240,
-  },
-  featuredImageWrap: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    height: 160,
-  },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
-  },
-  pricePill: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
-    backgroundColor: colors.accent,
-    borderRadius: radii.pill,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  priceText: {
-    color: colors.textOnAccent,
-    fontSize: 13,
-    fontFamily: fonts.extraBold,
-  },
-  featuredTitle: {
-    fontSize: 15,
-    fontFamily: fonts.bold,
-    color: colors.textPrimary,
-    marginTop: 10,
-    lineHeight: 20,
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: 2,
-    marginTop: 4,
-  },
-  marketSection: {
-    paddingHorizontal: spacing.screen,
-    marginTop: 22,
-  },
-  plansSection: {
-    paddingHorizontal: spacing.screen,
-    marginTop: 28,
-    gap: 14,
-  },
-  plansSubtitle: {
-    fontSize: 14,
-    fontFamily: fonts.regular,
-    color: colors.textSecondary,
-    marginTop: -6,
-    marginBottom: 2,
-  },
-  planCard: {
-    backgroundColor: colors.background,
+  marketCard: {
+    backgroundColor: colors.accentSoft,
     borderRadius: radii.card,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    padding: 22,
-    gap: 16,
-  },
-  planCardPopular: {
-    borderColor: colors.accent,
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -12,
-    right: 22,
-    backgroundColor: colors.accent,
-    borderRadius: radii.pill,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-  },
-  popularBadgeText: {
-    color: colors.textOnAccent,
-    fontSize: 12,
-    fontFamily: fonts.bold,
-  },
-  planHeader: {
+    overflow: 'hidden',
+    minHeight: 148,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    paddingLeft: 22,
   },
-  planDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  planName: {
+  marketCopy: {
     flex: 1,
+    paddingVertical: 22,
+    paddingRight: 12,
+    gap: 6,
+  },
+  marketTitle: {
     fontSize: 20,
     fontFamily: fonts.extraBold,
     color: colors.textPrimary,
   },
-  planPriceWrap: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  planPrice: {
-    fontSize: 24,
-    fontFamily: fonts.extraBold,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  planPer: {
-    fontSize: 13,
-    fontFamily: fonts.medium,
-    color: colors.textSecondary,
-  },
-  planFeatures: {
-    gap: 10,
-  },
-  planFeatureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  planFeatureText: {
-    flex: 1,
+  marketHint: {
     fontSize: 14,
     fontFamily: fonts.medium,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
     lineHeight: 20,
+  },
+  marketImage: {
+    width: 132,
+    height: 148,
   },
 });
