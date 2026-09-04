@@ -55,6 +55,21 @@ export function slotLabel(startHour: number, durationHours: number): string {
   return `${formatHour(startHour)} - ${formatHour(startHour + durationHours)}`;
 }
 
+/** Hours covered by a stored slot label such as "10:00 - 13:00". */
+export function slotDurationHours(timeSlot: string): number | null {
+  const match = timeSlot.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/);
+  if (!match) {
+    return null;
+  }
+  const start = Number(match[1]) * 60 + Number(match[2]);
+  const end = Number(match[3]) * 60 + Number(match[4]);
+  const minutes = end - start;
+  if (minutes <= 0) {
+    return null;
+  }
+  return minutes / 60;
+}
+
 /** Non-overlapping start hours within the working day for a given duration. */
 export function getSlotStartHours(durationHours: number): number[] {
   const starts: number[] = [];

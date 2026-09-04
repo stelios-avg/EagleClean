@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { acceptBooking, deleteBooking, saveAdminNotes, updateBookingStatus } from './actions';
+import { acceptBooking, completeBooking, deleteBooking, saveAdminNotes, updateBookingStatus } from './actions';
 import type { BookingStatus } from '@/lib/types';
 
 export function BookingRowActions({
@@ -21,6 +21,20 @@ export function BookingRowActions({
   const [error, setError] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState(notes ?? '');
   const [arrival, setArrival] = useState(arrivalTime ?? suggestedArrival);
+
+  const complete = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await completeBooking(bookingId);
+      if ('error' in result && result.error) {
+        setError(result.error);
+      } else if ('notified' in result && !result.notified) {
+        setError(
+          'Η κράτηση ολοκληρώθηκε. Ο πελάτης μπορεί να μην πάρει ειδοποίηση αν δεν έχει ανοιχτό το app.'
+        );
+      }
+    });
+  };
 
   const run = (statusNext: BookingStatus) => {
     setError(null);
@@ -103,10 +117,10 @@ export function BookingRowActions({
           <button
             type="button"
             disabled={pending}
-            onClick={() => run('completed')}
+            onClick={complete}
             className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.97] disabled:opacity-50"
           >
-            Ολοκλήρωση
+            Ολοκλήρωση & ειδοποίηση
           </button>
         ) : null}
         {canReject ? (

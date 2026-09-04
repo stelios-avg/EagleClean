@@ -136,3 +136,57 @@ export async function presentArrivalNotice(input: {
     trigger: null,
   });
 }
+
+export async function presentCompletedNotice(input: {
+  bookingId: string;
+  title: string;
+  body: string;
+  serviceDate?: string;
+  timeSlot?: string;
+  address?: string;
+}): Promise<void> {
+  await ensureAndroidChannel();
+  await Notifications.scheduleNotificationAsync({
+    identifier: `booking-completed-${input.bookingId}`,
+    content: {
+      title: input.title,
+      body: input.body,
+      sound: 'default',
+      data: {
+        bookingId: input.bookingId,
+        type: 'booking_completed',
+        serviceDate: input.serviceDate ?? '',
+        timeSlot: input.timeSlot ?? '',
+        address: input.address ?? '',
+      },
+    },
+    trigger: null,
+  });
+}
+
+export function parseNoticeData(data: unknown): {
+  type: string;
+  bookingId: string;
+  serviceDate?: string;
+  timeSlot?: string;
+  address?: string;
+} | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  const record = data as Record<string, unknown>;
+  const bookingId = typeof record.bookingId === 'string' ? record.bookingId : '';
+  const type = typeof record.type === 'string' ? record.type : '';
+  if (!bookingId || !type) {
+    return null;
+  }
+  const optional = (value: unknown) =>
+    typeof value === 'string' && value.length > 0 ? value : undefined;
+  return {
+    type,
+    bookingId,
+    serviceDate: optional(record.serviceDate),
+    timeSlot: optional(record.timeSlot),
+    address: optional(record.address),
+  };
+}

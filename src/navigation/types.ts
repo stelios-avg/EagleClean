@@ -21,6 +21,11 @@ export function isIroning(option: BookingOption): option is IroningService {
   return option === 'Ironing';
 }
 
+export function asBookingOption(raw: string): BookingOption | undefined {
+  const all: BookingOption[] = [...HOME_SIZES, ...CREW_SERVICES, 'Ironing'];
+  return all.find((option) => option === raw);
+}
+
 export function categoryFor(option: BookingOption): ServiceCategory {
   if (isIroning(option)) {
     return 'ironing';
@@ -141,6 +146,13 @@ export type RootStackParamList = {
   ShopCategory: { category: ShopCategorySlug };
   ShopCart: undefined;
   ShopCheckout: undefined;
+  BookingCompleted: {
+    bookingId: string;
+    serviceDate?: string;
+    timeSlot?: string;
+    address?: string;
+  };
+  BookingReview: { bookingId: string };
 };
 
 // Makes useNavigation() fully typed everywhere without extra annotations.

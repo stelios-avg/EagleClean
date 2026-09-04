@@ -20,6 +20,39 @@ function euros(cents: number) {
   return `€${(cents / 100).toFixed(2)}`;
 }
 
+function BookingReviewNote({
+  review,
+  completed,
+}: {
+  review?: {
+    rating: number;
+    comment: string | null;
+    want_same_cleaner: boolean;
+    tip_cents: number;
+  };
+  completed: boolean;
+}) {
+  if (!review) {
+    return completed ? (
+      <p className="mt-3 text-xs font-medium text-zinc-500">Δεν έχει αξιολογήσει ακόμα</p>
+    ) : null;
+  }
+  return (
+    <div className="mt-3 rounded-2xl bg-emerald-50 px-3 py-2.5">
+      <p className="text-[11px] font-bold tracking-wide text-emerald-800">ΑΞΙΟΛΟΓΗΣΗ</p>
+      <p className="mt-1 text-sm font-bold text-ink">
+        {review.rating}/5
+        {review.tip_cents > 0 ? ` · Tip ${euros(review.tip_cents)}` : ' · Χωρίς tip'}
+        {' · '}
+        {review.want_same_cleaner ? 'Ίδια καθαρίστρια' : 'Άλλη καθαρίστρια'}
+      </p>
+      {review.comment ? (
+        <p className="mt-1 text-xs leading-relaxed text-zinc-600">{review.comment}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function formatDate(isoDate: string) {
   return new Date(isoDate).toLocaleDateString('el-GR', {
     weekday: 'short',
@@ -70,6 +103,14 @@ export default async function BookingsPage({
     .from('bookings')
     .select('*')
     .order('created_at', { ascending: false });
+
+  const { data: reviewRows } = await supabase
+    .from('booking_reviews')
+    .select('booking_id, rating, comment, want_same_cleaner, tip_cents');
+
+  const reviewsByBooking = new Map(
+    (reviewRows ?? []).map((row) => [row.booking_id, row])
+  );
 
   const all = bookings ?? [];
 
@@ -327,6 +368,11 @@ export default async function BookingsPage({
                     </ul>
                   </div>
                 ) : null}
+
+                <BookingReviewNote
+                  review={reviewsByBooking.get(b.id)}
+                  completed={b.status === 'completed'}
+                />
 
                 <div className="mt-4 border-t border-zinc-100 pt-4">
                   <BookingRowActions

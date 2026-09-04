@@ -16,7 +16,7 @@ import { PressableScale } from '../../components/PressableScale';
 import { formatEuros } from '../../constants/payments';
 import { useI18n } from '../../i18n/LanguageContext';
 import { supabase } from '../../lib/supabase';
-import { cancelBooking, listMyBookings } from '../../services/bookings';
+import { cancelBooking, listMyBookings, listReviewedBookingIds } from '../../services/bookings';
 import { colors, fonts, radii, spacing } from '../../theme';
 import type { TranslationKey } from '../../i18n/translations';
 import type { RootStackParamList } from '../../navigation/types';
@@ -43,12 +43,18 @@ export default function MyBookingsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setBookings(await listMyBookings());
+      const [rows, reviewed] = await Promise.all([
+        listMyBookings(),
+        listReviewedBookingIds(),
+      ]);
+      setBookings(rows);
+      setReviewedIds(reviewed);
     } catch (e) {
       Alert.alert(t('auth.errorTitle'), (e as Error).message);
     }
@@ -164,6 +170,33 @@ export default function MyBookingsScreen({ navigation }: Props) {
             </PressableScale>
           ) : null}
         </View>
+        {item.status === 'completed' ? (
+          <View style={styles.completedActions}>
+            <PressableScale
+              onPress={() =>
+                navigation.navigate('BookingCompleted', {
+                  bookingId: item.id,
+                  serviceDate: item.service_date,
+                  timeSlot: item.time_slot,
+                  address: item.contact_address,
+                })
+              }
+              style={styles.viewBtn}
+            >
+              <Text style={styles.viewText}>{t('completed.viewBooking')}</Text>
+            </PressableScale>
+            {reviewedIds.has(item.id) ? (
+              <Text style={styles.reviewed}>{t('bookings.reviewed')}</Text>
+            ) : (
+              <PressableScale
+                onPress={() => navigation.navigate('BookingReview', { bookingId: item.id })}
+                style={styles.rateBtn}
+              >
+                <Text style={styles.rateText}>{t('bookings.rate')}</Text>
+              </PressableScale>
+            )}
+          </View>
+        ) : null}
       </View>
     );
   };
@@ -272,6 +305,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.bold,
     color: '#E5484D',
+  },
+  completedActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  viewBtn: {
+    flex: 1,
+    borderRadius: radii.pill,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    paddingVertical: 9,
+    alignItems: 'center',
+  },
+  viewText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.accentDeep,
+  },
+  rateBtn: {
+    flex: 1,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+    paddingVertical: 9,
+    alignItems: 'center',
+  },
+  rateText: {
+    fontSize: 13,
+    fontFamily: fonts.bold,
+    color: colors.textOnAccent,
+  },
+  reviewed: {
+    fontSize: 13,
+    fontFamily: fonts.semiBold,
+    color: colors.textSecondary,
   },
   empty: {
     flex: 1,

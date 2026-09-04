@@ -83,6 +83,21 @@ export type Database = {
         };
         Relationships: [];
       };
+      booking_reviews: {
+        Row: {
+          id: string;
+          booking_id: string;
+          user_id: string;
+          rating: number;
+          comment: string | null;
+          want_same_cleaner: boolean;
+          tip_cents: number;
+          created_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       closed_slots: {
         Row: {
           id: string;
@@ -109,3 +124,4 @@ export type Database = {
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
+export type BookingReview = Database['public']['Tables']['booking_reviews']['Row'];

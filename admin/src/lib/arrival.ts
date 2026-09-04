@@ -103,3 +103,10 @@ export function arrivalPushCopy(serviceDate: string, arrivalTime: string) {
       : `Στις ${dateLabel} στις ${arrivalTime} θα είναι εκεί η καθαρίστρια.`,
   };
 }
+
+export function completedPushCopy() {
+  return {
+    title: 'Η κράτησή σου ολοκληρώθηκε!',
+    body: 'Συγχαρητήρια — αξιολόγησε την επίσκεψη και άφησε tip αν θέλεις.',
+  };
+}

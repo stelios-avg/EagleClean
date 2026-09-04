@@ -6,6 +6,8 @@ import ProfileScreen from '../screens/account/ProfileScreen';
 import ShopCategoryScreen from '../screens/shop/ShopCategoryScreen';
 import CartScreen from '../screens/shop/CartScreen';
 import CheckoutScreen from '../screens/shop/CheckoutScreen';
+import BookingCompletedScreen from '../screens/booking/BookingCompletedScreen';
+import BookingReviewScreen from '../screens/booking/BookingReviewScreen';
 import MainTabNavigator from './MainTabNavigator';
 import BookingNavigator from './BookingNavigator';
 import AuthNavigator from './AuthNavigator';
@@ -47,6 +49,8 @@ export default function RootNavigator() {
       <Stack.Screen name="ShopCategory" component={ShopCategoryScreen} />
       <Stack.Screen name="ShopCart" component={CartScreen} />
       <Stack.Screen name="ShopCheckout" component={CheckoutScreen} />
+      <Stack.Screen name="BookingCompleted" component={BookingCompletedScreen} />
+      <Stack.Screen name="BookingReview" component={BookingReviewScreen} />
     </Stack.Navigator>
   );
 }

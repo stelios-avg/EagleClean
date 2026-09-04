@@ -18,6 +18,7 @@ import { STRIPE_PUBLISHABLE_KEY, APPLE_MERCHANT_ID } from './src/constants/payme
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import { LanguageProvider } from './src/i18n/LanguageContext';
+import { flushPendingNavigation, navigationRef } from './src/navigation/root-navigation';
 import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
@@ -43,7 +44,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
-            <NavigationContainer>
+            <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
               <RootNavigator />
               <BookingNotifications />
             </NavigationContainer>

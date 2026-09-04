@@ -14,6 +14,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BrandLogo, LanguageToggle } from '../../components/ui';
+import { BounceEmoji } from '../../components/BounceEmoji';
 import { PressableScale } from '../../components/PressableScale';
 import {
   DEEP_HOUR_RATE_CENTS,
@@ -140,7 +141,7 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <ScrollView
       style={styles.root}
-      contentContainerStyle={[styles.content, { paddingBottom: 36 }]}
+      contentContainerStyle={[styles.content, { paddingBottom: 40 }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
@@ -210,6 +211,74 @@ export default function HomeScreen({ navigation }: Props) {
           resizeMode="cover"
         />
       </PressableScale>
+
+      <Text style={[styles.sectionTitle, styles.howTitle]}>{t('home.howTitle')}</Text>
+      <View style={styles.howGrid}>
+        {(
+          [
+            {
+              emoji: '📅',
+              title: 'home.how1Title' as const,
+              body: 'home.how1Body' as const,
+              onPress: () => navigation.navigate('Plans'),
+            },
+            {
+              emoji: '✏️',
+              title: 'home.how2Title' as const,
+              body: 'home.how2Body' as const,
+            },
+            {
+              emoji: '👩',
+              title: 'home.how3Title' as const,
+              body: 'home.how3Body' as const,
+            },
+            {
+              emoji: '✨',
+              title: 'home.how4Title' as const,
+              body: 'home.how4Body' as const,
+            },
+          ]
+        ).map((step, index) => {
+          const inner = (
+            <>
+              <View style={styles.howIcon}>
+                <BounceEmoji emoji={step.emoji} delay={index * 140} size={26} />
+              </View>
+              <Text style={styles.howCardTitle}>{t(step.title)}</Text>
+              <Text style={styles.howCardBody}>{t(step.body)}</Text>
+            </>
+          );
+          if ('onPress' in step && step.onPress) {
+            return (
+              <PressableScale key={step.title} onPress={step.onPress} style={styles.howCard}>
+                {inner}
+              </PressableScale>
+            );
+          }
+          return (
+            <View key={step.title} style={styles.howCard}>
+              {inner}
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={styles.trustRow}>
+        <View style={styles.trustCard}>
+          <View style={styles.trustIcon}>
+            <Ionicons name="shield-checkmark" size={22} color={colors.accentDeep} />
+          </View>
+          <Text style={styles.trustTitle}>{t('home.trustTitle')}</Text>
+          <Text style={styles.trustBody}>{t('home.trustBody')}</Text>
+        </View>
+        <View style={styles.trustCard}>
+          <View style={styles.trustIcon}>
+            <Ionicons name="headset" size={22} color={colors.accentDeep} />
+          </View>
+          <Text style={styles.trustTitle}>{t('home.supportTitle')}</Text>
+          <Text style={styles.trustBody}>{t('home.supportBody')}</Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -366,5 +435,75 @@ const styles = StyleSheet.create({
   marketImage: {
     width: 132,
     height: 148,
+  },
+  howTitle: {
+    marginTop: 28,
+  },
+  howGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+    marginBottom: 14,
+  },
+  howCard: {
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: radii.card,
+    padding: 16,
+    gap: 8,
+    minHeight: 168,
+  },
+  howIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  howCardTitle: {
+    fontSize: 15,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+    lineHeight: 20,
+  },
+  howCardBody: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  trustCard: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: radii.card,
+    padding: 16,
+    gap: 8,
+  },
+  trustIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trustTitle: {
+    fontSize: 14,
+    fontFamily: fonts.extraBold,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+  trustBody: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
 });

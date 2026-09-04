@@ -174,6 +174,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      booking_reviews: {
+        Row: {
+          id: string;
+          booking_id: string;
+          user_id: string;
+          rating: number;
+          comment: string | null;
+          want_same_cleaner: boolean;
+          tip_cents: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          booking_id: string;
+          user_id: string;
+          rating: number;
+          comment?: string | null;
+          want_same_cleaner?: boolean;
+          tip_cents?: number;
+          created_at?: string;
+        };
+        Update: {
+          rating?: number;
+          comment?: string | null;
+          want_same_cleaner?: boolean;
+          tip_cents?: number;
+        };
+        Relationships: [];
+      };
       products: {
         Row: {
           id: string;
@@ -323,6 +352,7 @@ export type Database = {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
 export type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+export type BookingReview = Database['public']['Tables']['booking_reviews']['Row'];
 export type Product = Database['public']['Tables']['products']['Row'];
 export type ProductOrder = Database['public']['Tables']['product_orders']['Row'];
 export type ProductOrderItem =

@@ -2,7 +2,7 @@ import type { BookedRange } from '../constants/booking';
 import { BOOKING_EXTRAS, SERVICE_FEE_CENTS, allowedExtras, bookingGrandTotalCents } from '../constants/payments';
 import { supabase } from '../lib/supabase';
 import type { BookingSelection, ContactDetails } from '../navigation/types';
-import type { Booking, BookingStatus } from '../types/database';
+import type { Booking, BookingReview, BookingStatus } from '../types/database';
 import { getCachedPushToken, registerPushNotifications } from './notifications';
 
 export type CreateBookingInput = BookingSelection & {
@@ -110,6 +110,62 @@ export async function listMyBookings(): Promise<Booking[]> {
   }
 
   return data ?? [];
+}
+
+export async function getMyBooking(id: string): Promise<Booking | null> {
+  const { data, error } = await supabase.from('bookings').select('*').eq('id', id).maybeSingle();
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function listReviewedBookingIds(): Promise<Set<string>> {
+  const { data, error } = await supabase.from('booking_reviews').select('booking_id');
+  if (error) {
+    return new Set();
+  }
+  return new Set((data ?? []).map((row) => row.booking_id));
+}
+
+export async function getBookingReview(bookingId: string): Promise<BookingReview | null> {
+  const { data, error } = await supabase
+    .from('booking_reviews')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
+  if (error) {
+    return null;
+  }
+  return data;
+}
+
+export async function submitBookingReview(input: {
+  bookingId: string;
+  rating: number;
+  comment: string;
+  wantSameCleaner: boolean;
+  tipCents: number;
+}): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Not signed in');
+  }
+
+  const { error } = await supabase.from('booking_reviews').insert({
+    booking_id: input.bookingId,
+    user_id: user.id,
+    rating: input.rating,
+    comment: input.comment.trim() || null,
+    want_same_cleaner: input.wantSameCleaner,
+    tip_cents: input.tipCents,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 /** Customer-side cancellation; RLS only allows it while pending/paid. */
